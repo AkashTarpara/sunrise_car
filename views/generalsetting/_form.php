@@ -151,9 +151,6 @@ use wbraganca\dynamicform\DynamicFormWidget;
         <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
             <?= $form->field($model, 'tax')->textInput() ?>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
-            <?= $form->field($model, 'sample_shipping_charge')->textInput() ?>
-        </div>
         <div class="form-group col-xs-12 col-sm-12 col-md-4 col-lg-4">
             <?= $form->field($model, 'warehouse_address')->textInput() ?>
         </div>

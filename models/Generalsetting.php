@@ -30,7 +30,7 @@ class Generalsetting extends \yii\db\ActiveRecord
             //[['setting_id', 'terms_conditions', 'privacy_policy','matches','century','half_century','wickets','trophies','about_us','android_app_version','ios_app_version','version_message'], 'required'],
 
             [['setting_id', 'matches', 'century', 'half_century', 'wickets', 'trophies', 'android_app_version', 'ios_app_version'], 'integer'],
-            [['tax', 'sample_shipping_charge'], 'number'],
+            [['tax'], 'number'],
             [['terms_conditions', 'privacy_policy', 'about_us', 'facebook', 'instagram', 'twitter', 'youtube', 'tiktok', 'snapchat', 'ticket_policy', 'cookie', 'code_of_conduct', 'user_terms_conditions', 'user_privacy_policy', 'user_terms_service', 'club_terms_service', 'api_key', 'sps_flooring_title', 'sps_flooring_sub_title', 'weekly_bestsellers_title', 'weekly_bestsellers_sub_title', 'clients_say_title', 'clients_say_sub_title', 'pick_up_delivery', 'agree_delivery', 'meta_description', 'latitude', 'longitude', 'warehouse_address', 'contact_us_image'], 'string'],
 
             [['setting_id'], 'unique'],
@@ -104,7 +104,6 @@ class Generalsetting extends \yii\db\ActiveRecord
             'latitude' => Yii::t('app', 'Warehouse Latitude'),
             'longitude' => Yii::t('app', 'Warehouse Longitude'),
             'contact_us_image' => Yii::t('app', 'Contact Us Image'),
-            'sample_shipping_charge' => Yii::t('app', 'Sample Shipping Charge'),
         ];
     }
 

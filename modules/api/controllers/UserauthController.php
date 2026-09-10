@@ -19,10 +19,7 @@ use app\models\Appuser;
 use app\models\Generalsetting;
 use app\models\Appuserdevicesinfo;
 use app\models\Appuseraddress;
-use app\models\Usercarts;
 use app\models\Appuserfavourite;
-use app\models\Userorder;
-use app\models\Userorderdetail;
 
 use DateTime;
 use DatePeriod;
@@ -193,70 +190,6 @@ class UserauthController extends Controller
     }
   }
 
-  //6
-  public function actionAddeditusercarts()
-  {
-    global $user;
-
-    $user_carts_id = (!empty($_REQUEST['user_carts_id'])) ? $_REQUEST['user_carts_id'] : '';
-
-    $model = Usercarts::find()->where(['user_carts_id' => $user_carts_id])->one();
-
-    $message = Yii::t('app', 'Carts Updated successfully.');
-    $isNewRecord = 'No';
-    if (empty($model)) {
-      $model = new Usercarts();
-      $message = Yii::t('app', 'Carts added successfully.');
-      $isNewRecord = 'Yes';
-    }
-
-    $model->appuser_id = $user->appuser_id;
-
-    $model->load($_REQUEST);
-
-    if ($model->save()) {
-
-      $data = Yii::$app->MyFunctions->getUsercartsObject($model);
-      Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'message' => $message, 'data' => $data));
-    }
-    Yii::$app->MyFunctions->getModelErrors($model, "Y");
-  }
-
-  //7
-  public function actionGetusercarts()
-  {
-    global $user;
-    $data = [];
-
-    $query = Usercarts::find()->Where(['appuser_id' => $user->appuser_id])->orderBy(['created_at' => SORT_DESC])->all();
-    $data = [];
-    if (!empty($query)) {
-      foreach ($query as $key => $news_catagory) {
-        $data[$key] = Yii::$app->MyFunctions->getUsercartsObject($news_catagory);
-      }
-    }
-
-    Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'data' => $data));
-  }
-
-  // 8
-  public function actionDeleteusercarts()
-  {
-    global $user;
-    $user_carts_id = (!empty($_REQUEST['user_carts_id'])) ? $_REQUEST['user_carts_id'] : '';
-    if (empty($user_carts_id)) {
-      Yii::$app->MyFunctions->JsonPrint(array('status' => 0, 'message' => Yii::t('app', 'User Carts Id is required')));
-    } else {
-      $model = Usercarts::find()->where(['user_carts_id' => $user_carts_id, 'appuser_id' => $user->appuser_id])->one();
-      if (empty($model)) {
-        Yii::$app->MyFunctions->JsonPrint(array('status' => 0, 'message' => Yii::t('app', 'User Carts not found')));
-      } else {
-        $model->delete();
-        Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'message' => Yii::t('app', 'User Carts deleted successfully')));
-      }
-    }
-  }
-
   // 9
   // public function actionCreatepaymentintent()
   // {
@@ -365,62 +298,6 @@ class UserauthController extends Controller
         ]);
     }
 }
-
-  //10
-  public function actionCheckout()
-  {
-    global $user;
-
-
-    $model = new Userorder();
-    $model->scenario = 'apicreate';
-    $model->load($_REQUEST);
-    $message = Yii::t('app', 'Checkout successfully.');
-    $model->appuser_id = $user->appuser_id;
-
-
-    $model->payment_date = date('Y-m-d H:i:s');
-    $model->order_number = gmdate('dmy') . Yii::$app->MyFunctions->GenerateOTP(6);
-    $user_carts_id = (!empty($model->user_carts_id)) ? explode(',', $model->user_carts_id) : '';
-    if ($model->validate() && $model->save()) {
-      if (!empty($user_carts_id)) {
-        foreach ($user_carts_id as $carts_id) {
-          $carts = Usercarts::find()->where(['user_carts_id' => $carts_id, 'appuser_id' => $user->appuser_id])->one();
-          if (!empty($carts)) {
-            $orderDetail = new Userorderdetail();
-            $orderDetail->user_order_id = $model->user_order_id;
-            $orderDetail->product_id = $carts->product_id;
-            $orderDetail->price = $carts->price;
-            $orderDetail->quantity = $carts->quantity;
-            if ($orderDetail->save()) {
-              $carts->delete();
-            }
-          }
-        }
-      }
-      $model->sendOrderEmail();
-      $data = Yii::$app->MyFunctions->getUserorderObject($model);
-      Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'message' => $message, 'data' => $data));
-    }
-    Yii::$app->MyFunctions->getModelErrors($model, "Y");
-  }
-
-  //11
-  public function actionGetuserorder()
-  {
-    global $user;
-    $data = [];
-
-    $query = Userorder::find()->Where(['appuser_id' => $user->appuser_id])->orderBy(['created_at' => SORT_DESC])->all();
-    $data = [];
-    if (!empty($query)) {
-      foreach ($query as $key => $news_catagory) {
-        $data[$key] = Yii::$app->MyFunctions->getUserorderObject($news_catagory);
-      }
-    }
-
-    Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'data' => $data));
-  }
 
   // 3
   //Update Profile

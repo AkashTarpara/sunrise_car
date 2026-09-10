@@ -13,11 +13,8 @@ use yii\base\ErrorException;
 //use app\models\EntryForm;
 
 use app\models\Banner;
-use app\models\Productcategory;
 use app\models\Clientsay;
 use app\models\Newsletter;
-use app\models\Product;
-use app\models\Shoppingbybrands;
 use app\models\Generalsetting;
 use app\models\Contactus;
 use app\models\Appuser;
@@ -36,7 +33,6 @@ use app\models\Subfloorcondition;
 use app\models\Installationcomplexity;
 use app\models\Tradeproapplication;
 use app\models\Tradepropartner;
-use app\models\Sample;
 
 use app\models\Importcsv;
 use Aws\S3\S3Client;
@@ -181,7 +177,6 @@ class BeforeauthController extends Controller
       $data['delivery_charge'] = $model->delivery_charge;
       $data['need_to_display_roomvo'] = $model->need_to_display_roomvo;
       $data['contact_us_image'] = (!empty($model->contact_us_image)) ? Yii::$app->params['ImagePath'] . $model->contact_us_image : '';
-      $data['sample_shipping_charge'] = $model->sample_shipping_charge;
       //$data['current_tournament'] = $model->current_tournament;
       //$data['live_match_url'] = $model->live_match_url;
       //$data['show_chat_support_on_app'] = $model->show_chat_support_on_app;
@@ -230,14 +225,6 @@ class BeforeauthController extends Controller
       }
     }
 
-    $query = Productcategory::find()->Where(['status' => 'Active'])->orderBy(['display_order' => SORT_ASC])->all();
-    $data['product_category'] = [];
-    if (!empty($query)) {
-      foreach ($query as $key => $news_catagory) {
-        $data['product_category'][$key] = Yii::$app->MyFunctions->getProductcategory($news_catagory);
-      }
-    }
-
     $query = Newsletter::find()->Where(['status' => 'Active'])->orderBy(['date' => SORT_DESC])->limit(4)->all();
     $data['news'] = [];
     if (!empty($query)) {
@@ -253,115 +240,7 @@ class BeforeauthController extends Controller
         $data['client_say'][$key] = Yii::$app->MyFunctions->getClientsayObject($news_catagory);
       }
     }
-    $query = Shoppingbybrands::find()->Where(['status' => 'Active'])->orderBy(['display_order' => SORT_ASC])->all();
-    $data['shopping_by_brands'] = [];
-    if (!empty($query)) {
-      foreach ($query as $key => $news_catagory) {
-        $data['shopping_by_brands'][$key] = Yii::$app->MyFunctions->getShoppingbybrandsObject($news_catagory);
-      }
-    }
-
-
     Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'data' => $data));
-  }
-
-
-  //2
-  public function actionGetproductcategory()
-  {
-    $data = [];
-
-    $query = Productcategory::find()->Where(['status' => 'Active'])->orderBy(['display_order' => SORT_ASC])->all();
-    $data = [];
-    if (!empty($query)) {
-      foreach ($query as $key => $news_catagory) {
-        $data[$key] = Yii::$app->MyFunctions->getProductcategory($news_catagory);
-      }
-    }
-
-    Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'data' => $data));
-  }
-
-  public function actionGetproductcategorywithsample()
-  {
-    $query = Productcategory::find()
-      ->where(['status' => 'Active'])
-      ->andWhere(['not', ['sample_image' => null]])
-      ->andWhere(['not', ['sample_image' => '']])
-      ->orderBy(['display_order' => SORT_ASC])
-      ->all();
-
-    $data = [];
-    if (!empty($query)) {
-      foreach ($query as $key => $category) {
-        $data[$key] = Yii::$app->MyFunctions->getProductcategory($category);
-      }
-    }
-
-    Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'data' => $data));
-  }
-
-  //3
-  public function actionGetproduct()
-  {
-
-    $page = (isset($_REQUEST['page']) && $_REQUEST['page']) ? $_REQUEST['page'] : 1;
-
-    $pagesize = (isset($_REQUEST['pagesize']) && $_REQUEST['pagesize']) ? $_REQUEST['pagesize'] : 10;
-    $product_category_id = (isset($_REQUEST['product_category_id']) && $_REQUEST['product_category_id']) ? $_REQUEST['product_category_id'] : '';
-
-    if (empty($product_category_id)) {
-      $query = Product::find()
-        ->Where(['status' => 'Active'])
-        ->orderBy(['display_order' => SORT_ASC]);
-    } else {
-      $query = Product::find()
-        ->Where(['status' => 'Active', 'product_category_id' => $product_category_id])
-        ->orderBy(['display_order' => SORT_ASC]);
-    }
-
-
-    $provider_data = new ActiveDataProvider([
-      'query' => $query,
-      'pagination' => [
-        'pageSize' => $pagesize,
-        'page' => $page - 1,
-      ],
-    ]);
-
-    $ModelData = $provider_data->getModels();
-    $totalPage = $provider_data->pagination->pageCount;
-    $currentPage = $provider_data->pagination->page + 1;
-
-    if ($currentPage < $totalPage) {
-      $is_nextpage = "Y";
-    } else {
-      $is_nextpage = "N";
-    }
-
-    $data = [];
-    foreach ($ModelData as $key => $portfolio) {
-      $data[$key] = Yii::$app->MyFunctions->getProductHomeObject($portfolio);
-    }
-
-    //Yii::$app->MyFunction->setHeader(200);
-    Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'total_page' => $totalPage, 'current_page' => $currentPage, 'is_next_page' => $is_nextpage, 'data' => $data));
-  }
-
-  //4
-  public function actionGetproductdetails()
-  {
-    $slug = (isset($_REQUEST['slug']) && !empty($_REQUEST['slug'])) ? $_REQUEST['slug'] : '-';
-
-    $query = Product::find()
-      ->Where(['status' => 'Active', 'slug' => $slug])
-      ->one();
-    if (!empty($query)) {
-      $data = Yii::$app->MyFunctions->getProductObject($query);
-      Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'message' => Yii::t('app', 'List found'), 'data' => $data));
-    } else {
-      Yii::$app->MyFunctions->JsonPrint(array('status' => 0, 'message' => Yii::t('app', 'Invalid parameter value')));
-    }
   }
 
   //6
@@ -930,15 +809,6 @@ class BeforeauthController extends Controller
         $data['client_say'][$key] = Yii::$app->MyFunctions->getClientsayObject($news_catagory);
       }
     }
-    $query = Shoppingbybrands::find()->Where(['status' => 'Active'])->orderBy(['display_order' => SORT_ASC])->all();
-    $data['shopping_by_brands'] = [];
-    if (!empty($query)) {
-      foreach ($query as $key => $news_catagory) {
-        $data['shopping_by_brands'][$key] = Yii::$app->MyFunctions->getShoppingbybrandsObject($news_catagory);
-      }
-    }
-
-
     Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'data' => $data));
   }
 
@@ -1182,86 +1052,4 @@ class BeforeauthController extends Controller
     }
   }
 
-  public function actionSample()
-  {
-
-    $model = new Sample();
-    $model->load($_REQUEST);
-
-    $model->payment_date = date('Y-m-d H:i:s');
-    $model->order_number = gmdate('dmy') . Yii::$app->MyFunctions->GenerateOTP(6);
-    if ($model->validate() && $model->save()) {
-      $emailSent = $this->sendSampleCheckoutEmail($model);
-      Yii::info('Sample checkout email sent result for sample #' . $model->sample_id . ': ' . ($emailSent ? 'sent' : 'not sent'), __METHOD__);
-
-      $message = Yii::t('app', 'Sample Checkout successfully.');
-      $data = Yii::$app->MyFunctions->getSampleObject($model);
-      Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'message' => $message, 'data' => $data));
-    }
-    Yii::$app->MyFunctions->getModelErrors($model, "Y");
-  }
-
-  public function actionTestsampleemail()
-  {
-    $sampleId = (!empty($_REQUEST['sample_id'])) ? $_REQUEST['sample_id'] : '';
-
-    if (empty($sampleId)) {
-      Yii::$app->MyFunctions->JsonPrint(array('status' => 0, 'message' => Yii::t('app', 'Sample ID is required')));
-    }
-
-    $model = Sample::findOne($sampleId);
-    if (empty($model)) {
-      Yii::$app->MyFunctions->JsonPrint(array('status' => 0, 'message' => Yii::t('app', 'Sample not found')));
-    }
-
-    $emailSent = $this->sendSampleCheckoutEmail($model);
-    Yii::info('Sample checkout test email sent result for sample #' . $model->sample_id . ': ' . ($emailSent ? 'sent' : 'not sent'), __METHOD__);
-
-    Yii::$app->MyFunctions->JsonPrint(array(
-      'status' => $emailSent ? 1 : 0,
-      'message' => $emailSent ? Yii::t('app', 'Sample checkout email sent successfully.') : Yii::t('app', 'Sample checkout email not sent. Please check email settings.'),
-      'data' => Yii::$app->MyFunctions->getSampleObject($model),
-    ));
-  }
-
-  private function sendSampleCheckoutEmail($model)
-  {
-    $fromEmail = ($_ENV['SMTP_USER'] ?: ($_SERVER['SMTP_USER'] ?: Yii::$app->params['senderEmail'])) ?: (Yii::$app->params['supportEmail'] ?: Yii::$app->params['adminEmail']);
-    $fromName = Yii::$app->params['senderName'] ?: (Yii::$app->params['project_display_name'] ?: Yii::$app->name);
-    $toEmail = Yii::$app->params['applicationEmail'];
-    $ccEmails = $this->getEmailList(Yii::$app->params['applicationCcEmail'] ?: '');
-
-    if (empty($toEmail)) {
-      Yii::warning('application_email env value is empty; sample checkout email not sent.', __METHOD__);
-      return false;
-    }
-
-    if (empty($fromEmail)) {
-      Yii::warning('Sender email is empty; sample checkout email not sent.', __METHOD__);
-      return false;
-    }
-
-    try {
-      Yii::$app->mailer->htmlLayout = "@app/mail/layouts/htmlnew";
-      $sent = Yii::$app->mailer
-        ->compose(['html' => 'samplecheckout'], ['model' => $model])
-        ->setTo($toEmail)
-        ->setFrom([$fromEmail => $fromName])
-        ->setReplyTo($model->email ?: $fromEmail)
-        ->setSubject('Luxury Layers Sample Checkout #' . $model->order_number);
-
-      if (!empty($ccEmails)) {
-        $sent->setCc($ccEmails);
-      }
-
-      $sent = $sent->send();
-
-      Yii::warning('Sample checkout mailer send() returned: ' . ($sent ? 'true' : 'false'), __METHOD__);
-      return $sent;
-    } catch (\Exception $e) {
-      Yii::error('Sample checkout email failed: ' . $e->getMessage(), __METHOD__);
-      Yii::error($e->getTraceAsString(), __METHOD__);
-      return false;
-    }
-  }
 }
