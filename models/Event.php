@@ -27,11 +27,11 @@ class Event extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['title', 'category', 'event_date', 'event_time', 'venue', 'location'], 'required'],
+            [['title', 'category', 'event_date', 'event_time', 'location'], 'required'],
             [['event_date', 'event_time', 'created_at', 'updated_at'], 'safe'],
             [['description'], 'string'],
             [['latitude', 'longitude'], 'number'],
-            [['title', 'category', 'venue', 'location', 'image', 'slug'], 'string', 'max' => 255],
+            [['title', 'category', 'location', 'image', 'slug'], 'string', 'max' => 255],
             [['status'], 'in', 'range' => ['Active', 'Inactive']],
             [['image'], 'file', 'extensions' => ['png', 'jpg', 'jpeg', 'webp', 'gif']],
             [['created_at'], 'default', 'value' => date('Y-m-d H:i:s')],

@@ -12,10 +12,9 @@ $form = ActiveForm::begin(['options' => ['enctype' => 'multipart/form-data']]);
 <div class="row">
     <div class="col-md-3"><?= $form->field($model, 'event_date')->input('date') ?></div>
     <div class="col-md-3"><?= $form->field($model, 'event_time')->input('time') ?></div>
-    <div class="col-md-6"><?= $form->field($model, 'venue')->textInput(['maxlength' => true]) ?></div>
+    <div class="col-md-6"><?= $form->field($model, 'location')->textInput(['maxlength' => true, 'placeholder' => 'Miami, FL']) ?></div>
 </div>
 <div class="row">
-    <div class="col-md-6"><?= $form->field($model, 'location')->textInput(['maxlength' => true, 'placeholder' => 'Miami, FL']) ?></div>
     <div class="col-md-3"><?= $form->field($model, 'latitude')->textInput(['placeholder' => '25.7617']) ?></div>
     <div class="col-md-3"><?= $form->field($model, 'longitude')->textInput(['placeholder' => '-80.1918']) ?></div>
 </div>

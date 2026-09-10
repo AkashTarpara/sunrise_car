@@ -1549,7 +1549,6 @@ class MyFunctions extends Component
       'category' => $model->category,
       'event_date' => $model->event_date,
       'event_time' => $model->event_time,
-      'venue' => $model->venue,
       'location' => $model->location,
       'latitude' => $model->latitude,
       'longitude' => $model->longitude,

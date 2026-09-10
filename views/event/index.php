@@ -34,7 +34,6 @@ $this->params['breadcrumbs'][] = $this->title;
                         'category',
                         'event_date',
                         'event_time',
-                        'venue',
                         'location',
                         'status',
                         'created_at',
