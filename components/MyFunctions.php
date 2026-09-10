@@ -1440,31 +1440,6 @@ class MyFunctions extends Component
     return $data;
   }
 
-  //User Object Api
-  public function getBannerObject($model)
-  {
-    $data = [];
-
-    if (!empty($model)) {
-      $data['banner_id'] = $model->banner_id;
-      $data['title'] = $model->title;
-      $data['subtitle'] = $model->subtitle;
-      $data['btn_title'] = $model->btn_title;
-      $data['url'] = $model->url;
-      $data['type'] = $model->type;
-      $data['image'] = (!empty($model->image)) ? Yii::$app->params['ImagePath'] . $model->image : '';
-      $data['video'] = (!empty($model->video)) ? Yii::$app->params['ImagePath'] . $model->video : '';
-      $data['mobile_video'] = (!empty($model->mobile_video)) ? Yii::$app->params['ImagePath'] . $model->mobile_video : '';
-      $data['display_order'] = $model->display_order;
-      $data['status'] = $model->status;
-      $data['created_at'] = $model->created_at;
-      $data['updated_at'] = $model->updated_at;
-    }
-
-
-    return $data;
-  }
-
   public function getProductcategory($model)
   {
     $data = [];

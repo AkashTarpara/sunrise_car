@@ -12,7 +12,6 @@ use yii\data\ArrayDataProvider;
 use yii\base\ErrorException;
 //use app\models\EntryForm;
 
-use app\models\Banner;
 use app\models\Clientsay;
 use app\models\Newsletter;
 use app\models\Generalsetting;
@@ -209,14 +208,6 @@ class BeforeauthController extends Controller
   public function actionGethomescreen()
   {
     $data = [];
-    $query = Banner::find()->Where(['status' => 'Active'])->orderBy(['display_order' => SORT_ASC])->all();
-    $data['banner'] = [];
-    if (!empty($query)) {
-      foreach ($query as $key => $news_catagory) {
-        $data['banner'][$key] = Yii::$app->MyFunctions->getBannerObject($news_catagory);
-      }
-    }
-
     $query = Newsletter::find()->Where(['status' => 'Active'])->orderBy(['date' => SORT_DESC])->limit(4)->all();
     $data['news'] = [];
     if (!empty($query)) {
