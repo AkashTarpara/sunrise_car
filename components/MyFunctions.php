@@ -1537,6 +1537,31 @@ class MyFunctions extends Component
     return $data;
   }
 
+  public function getEventObject($model)
+  {
+    if (empty($model)) {
+      return [];
+    }
+
+    return [
+      'event_id' => $model->event_id,
+      'title' => $model->title,
+      'category' => $model->category,
+      'event_date' => $model->event_date,
+      'event_time' => $model->event_time,
+      'venue' => $model->venue,
+      'location' => $model->location,
+      'latitude' => $model->latitude,
+      'longitude' => $model->longitude,
+      'description' => $model->description,
+      'image' => !empty($model->image) ? Yii::$app->params['ImagePath'] . $model->image : '',
+      'slug' => $model->slug,
+      'status' => $model->status,
+      'created_at' => $model->created_at,
+      'updated_at' => $model->updated_at,
+    ];
+  }
+
   public function getProductHomeObject($model)
   {
     $data = [];

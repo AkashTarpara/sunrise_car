@@ -14,6 +14,7 @@ use yii\base\ErrorException;
 
 use app\models\Clientsay;
 use app\models\Newsletter;
+use app\models\Event;
 use app\models\Generalsetting;
 use app\models\Contactus;
 use app\models\Appuser;
@@ -425,6 +426,49 @@ class BeforeauthController extends Controller
   }
 
   //7
+  public function actionGetevents()
+  {
+    $page = (isset($_REQUEST['page']) && $_REQUEST['page']) ? (int) $_REQUEST['page'] : 1;
+    $pagesize = (isset($_REQUEST['pagesize']) && $_REQUEST['pagesize']) ? (int) $_REQUEST['pagesize'] : 20;
+
+    $provider = new ActiveDataProvider([
+      'query' => Event::find()->where(['status' => 'Active'])->orderBy(['event_date' => SORT_ASC, 'event_time' => SORT_ASC]),
+      'pagination' => ['pageSize' => $pagesize, 'page' => max(0, $page - 1)],
+    ]);
+
+    $data = [];
+    foreach ($provider->getModels() as $event) {
+      $data[] = Yii::$app->MyFunctions->getEventObject($event);
+    }
+
+    $currentPage = $provider->pagination->page + 1;
+    Yii::$app->MyFunctions->JsonPrint([
+      'status' => 1,
+      'total_page' => $provider->pagination->pageCount,
+      'current_page' => $currentPage,
+      'is_next_page' => $currentPage < $provider->pagination->pageCount ? 'Y' : 'N',
+      'data' => $data,
+    ]);
+  }
+
+  public function actionGeteventdetails()
+  {
+    $slug = !empty($_REQUEST['slug']) ? $_REQUEST['slug'] : '-';
+    $event = Event::find()->where(['status' => 'Active', 'slug' => $slug])->one();
+
+    if ($event === null) {
+      Yii::$app->MyFunctions->JsonPrint(['status' => 0, 'message' => Yii::t('app', 'Event not found')]);
+      return;
+    }
+
+    Yii::$app->MyFunctions->JsonPrint([
+      'status' => 1,
+      'message' => Yii::t('app', 'Event found'),
+      'data' => Yii::$app->MyFunctions->getEventObject($event),
+    ]);
+  }
+
+  //8
   public function actionGetnewsletter()
   {
 
