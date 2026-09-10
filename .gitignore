@@ -1,0 +1,11 @@
+/vendor/*
+/assets/*
+!/assets/AppAsset.php
+/runtime/*
+/uploads/images/*
+/uploads/editorimage/*
+/uploads/thumbnail/*
+/uploads/csv/*
+/uploads/thumbnail/*
+/uploads/gaanalytics/*
+.env

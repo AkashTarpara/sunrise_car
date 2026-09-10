@@ -1,0 +1,24 @@
+<?php
+
+use yii\helpers\Html;
+
+/** @var yii\web\View $this */
+/** @var app\models\Appuser $model */
+
+$this->title = Yii::t('app', 'Update User');
+//$this->params['breadcrumbs'][] = ['label' => Yii::t('app', 'Appusers'), 'url' => ['index']];
+//$this->params['breadcrumbs'][] = ['label' => $model->appuser_id, 'url' => ['view', 'appuser_id' => $model->appuser_id]];
+$this->params['breadcrumbs'][] = Yii::t('app', 'Update Profile');
+?>
+<div class="appuser-update">
+  <div class="card">
+    <div class="card-header">
+      <h5><?= Html::encode($this->title) ?></h5>
+    </div>
+    <div class="card-body">
+      <?= $this->render('_form', [
+        'model' => $model,
+      ]) ?>
+    </div>
+  </div>
+</div>
