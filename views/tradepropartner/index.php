@@ -67,7 +67,7 @@ $statusLabels = [
                     'label' => 'Export All',
                     'class' => 'btn btn-default',
                 ],
-                'filename' => 'trade_pro_applications_' . date('Y-m-d'),
+                'filename' => 'trade_pro_partners_' . date('Y-m-d'),
             ]); ?>
         </div>
         <div class="card-body table-border-style">
