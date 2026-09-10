@@ -103,7 +103,7 @@ $sections = [
                             New Trade Pro Application
                         </div>
                         <div style="font-size:14px; line-height:22px; color:#c7cccc; margin-top:10px;">
-                            A new professional account application has been submitted from the Luxury Layers website.
+                            A new professional account application has been submitted from the Sunrise Car website.
                         </div>
                         <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top:22px;">
                             <tr>
@@ -156,7 +156,7 @@ $sections = [
                         <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background:#000000; border-radius:16px;">
                             <tr>
                                 <td align="center" style="padding:18px 22px; color:#b8bebe; font-size:12px; line-height:18px;">
-                                    Documents are attached when uploaded. This notification was generated automatically by Luxury Layers.
+                                    Documents are attached when uploaded. This notification was generated automatically by Sunrise Car.
                                 </td>
                             </tr>
                         </table>

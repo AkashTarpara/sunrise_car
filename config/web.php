@@ -4,8 +4,8 @@ $params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/db.php';
 
 $config = [
-    'id' => 'Luxury Layer Floor',
-    'name' => 'Luxury Layer Floor',
+    'id' => 'Sunrise Car',
+    'name' => 'Sunrise Car',
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
     'timeZone' => 'Asia/Kolkata',

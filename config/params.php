@@ -27,7 +27,7 @@ return [
         ?: ($_SERVER['APPLICATION_CC_EMAIL']
         ?: getenv('APPLICATION_CC_EMAIL')))))
     ),
-    'project_display_name' => 'Luxury Layer Floor',
+    'project_display_name' => 'Sunrise Car',
 
     'ImagePath' => ($_ENV['IMAGEPATH'] ?: ''),
 
