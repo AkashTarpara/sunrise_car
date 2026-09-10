@@ -18,7 +18,6 @@ use app\models\Generalsetting;
 use app\models\Contactus;
 use app\models\Appuser;
 use app\models\Aboutus;
-use app\models\Shippingcharge;
 use app\models\Advertisement;
 use app\models\Tradepropartner;
 
@@ -618,22 +617,6 @@ class BeforeauthController extends Controller
     } else {
       Yii::$app->MyFunctions->getModelErrors($model, "Y");
     }
-  }
-
-  //14
-  public function actionGetshippingcharge()
-  {
-    $data = [];
-
-    $query = Shippingcharge::find()->Where(['status' => 'Active'])->orderBy(['shipping_charge_id' => SORT_DESC])->all();
-    $data = [];
-    if (!empty($query)) {
-      foreach ($query as $key => $news_catagory) {
-        $data[$key] = Yii::$app->MyFunctions->getShippingchargeObject($news_catagory);
-      }
-    }
-
-    Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'data' => $data));
   }
 
   public function actionCreatepaymentintent()

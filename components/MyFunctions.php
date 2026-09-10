@@ -1755,21 +1755,6 @@ class MyFunctions extends Component
     return $data;
   }
 
-  public function getShippingchargeObject($model)
-  {
-    $data = [];
-    if (!empty($model)) {
-      $data['shipping_charge_id'] = $model->shipping_charge_id;
-      $data['min_mile'] = $model->min_mile;
-      $data['max_mile'] = $model->max_mile;
-      $data['price'] = number_format((float)$model->price, 2, '.', '');
-      $data['status'] = $model->status;
-      $data['created_at'] = $model->created_at;
-      $data['updated_at'] = $model->updated_at;
-    }
-    return $data;
-  }
-
   public function getSampleObject($model)
   {
     $data = [];
