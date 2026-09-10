@@ -25,7 +25,7 @@ class EventSearch extends Event
         $query = Event::find();
         $provider = new ActiveDataProvider([
             'query' => $query,
-            'sort' => ['defaultOrder' => ['event_date' => SORT_ASC, 'event_time' => SORT_ASC]],
+            'sort' => false,
         ]);
 
         $this->load($params);
