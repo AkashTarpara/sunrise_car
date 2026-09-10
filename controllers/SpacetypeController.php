@@ -5,7 +5,6 @@ namespace app\controllers;
 use app\models\Spacetype;
 use app\models\SpacetypeSearch;
 use app\models\SubfloorconditionSearch;
-use app\models\InstallationcomplexitySearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
@@ -59,16 +58,11 @@ class SpacetypeController extends Controller
         $searchModelSubfloor = new SubfloorconditionSearch();
         $dataProviderSubfloor = $searchModelSubfloor->search($this->request->queryParams);
 
-        $searchModelInstallationcomplexitySearch = new InstallationcomplexitySearch();
-        $dataProviderInstallationcomplexitySearch = $searchModelInstallationcomplexitySearch->search($this->request->queryParams);
-
         return $this->render('index', [
             'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
             'searchModelSubfloor' => $searchModelSubfloor,
             'dataProviderSubfloor' => $dataProviderSubfloor,
-            'searchModelInstallationcomplexitySearch' => $searchModelInstallationcomplexitySearch,
-            'dataProviderInstallationcomplexitySearch' => $dataProviderInstallationcomplexitySearch,
         ]);
     }
 

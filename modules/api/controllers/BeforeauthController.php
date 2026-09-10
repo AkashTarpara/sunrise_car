@@ -20,17 +20,9 @@ use app\models\Contactus;
 use app\models\Appuser;
 use app\models\Aboutus;
 use app\models\Shippingcharge;
-use app\models\Installation;
-use app\models\InstallationSchedulingRequest;
-use app\models\Installationbanner;
-use app\models\Installationprocess;
-use app\models\Warranty;
-use app\models\WarrantyDocument;
-use app\models\Warrantycertificate;
 use app\models\Advertisement;
 use app\models\Spacetype;
 use app\models\Subfloorcondition;
-use app\models\Installationcomplexity;
 use app\models\Tradeproapplication;
 use app\models\Tradepropartner;
 
@@ -284,99 +276,6 @@ class BeforeauthController extends Controller
       'message' => Yii::t('app', 'File uploaded successfully.'),
       'data' => $urls,
     ));
-  }
-
-  public function actionInstallationSchedulingRequest()
-  {
-    $model = new InstallationSchedulingRequest();
-    $data = Yii::$app->request->post();
-
-    if (empty($data)) {
-      $rawBody = Yii::$app->request->getRawBody();
-      $jsonData = json_decode($rawBody, true);
-      if (is_array($jsonData)) {
-        $data = $jsonData;
-      }
-    }
-
-    if (isset($data['InstallationSchedulingRequest']) && is_array($data['InstallationSchedulingRequest'])) {
-      $data = $data['InstallationSchedulingRequest'];
-    }
-
-    $booleanFields = array(
-      'will_someone_be_present',
-      'gate_code_required',
-      'building_access_required',
-      'elevator_reservation_required',
-      'parking_restrictions',
-      'access_other',
-      'agreed',
-    );
-
-    foreach ($booleanFields as $field) {
-      if (isset($data[$field]) && $data[$field] !== '') {
-        $data[$field] = filter_var($data[$field], FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-      }
-    }
-
-    if (!empty($data['signed_date'])) {
-      $data['signed_date'] = $this->normalizeInstallationRequestDate($data['signed_date']);
-    }
-
-    $model->load($data, '');
-
-    if ($model->validate() && $model->save(false)) {
-      $emailSent = $this->sendInstallationSchedulingRequestEmail($model);
-      Yii::info('Installation scheduling request email sent result for request #' . $model->id . ': ' . ($emailSent ? 'sent' : 'not sent'), __METHOD__);
-
-      Yii::$app->MyFunctions->JsonPrint(array(
-        'status' => 1,
-        'message' => Yii::t('app', 'Installation scheduling request submitted successfully.'),
-      ));
-    }
-
-    Yii::$app->MyFunctions->getModelErrors($model, "Y");
-  }
-
-  private function sendInstallationSchedulingRequestEmail($model)
-  {
-    $toEmail = Yii::$app->params['applicationEmail'] ?: (Yii::$app->params['contactEmail'] ?: Yii::$app->params['adminEmail']);
-    $ccEmails = $this->getEmailList(Yii::$app->params['applicationCcEmail'] ?: '');
-    $fromEmail = ($_ENV['SMTP_USER'] ?: ($_SERVER['SMTP_USER'] ?: Yii::$app->params['senderEmail'])) ?: Yii::$app->params['adminEmail'];
-    $fromName = Yii::$app->params['senderName'] ?: Yii::$app->name;
-
-    if (empty($toEmail)) {
-      Yii::warning('Application/contact/admin email is empty; installation scheduling request email not sent.', __METHOD__);
-      return false;
-    }
-
-    if (empty($fromEmail)) {
-      Yii::warning('Sender email is empty; installation scheduling request email not sent.', __METHOD__);
-      return false;
-    }
-
-    try {
-      Yii::$app->mailer->htmlLayout = "@app/mail/layouts/htmlnew";
-      $message = Yii::$app->mailer
-        ->compose(['html' => 'installationschedulingrequest'], ['model' => $model])
-        ->setTo($toEmail)
-        ->setFrom([$fromEmail => $fromName])
-        ->setReplyTo($model->email_address ?: $fromEmail)
-        ->setSubject('LUXURY LAYER - Installation Scheduling Request - ' . $model->customer_name);
-
-      if (!empty($ccEmails)) {
-        $message->setCc($ccEmails);
-      }
-
-      $sent = $message->send();
-
-      Yii::warning('Installation scheduling request mailer send() returned: ' . ($sent ? 'true' : 'false'), __METHOD__);
-      return $sent;
-    } catch (\Exception $e) {
-      Yii::error('Installation scheduling request email failed: ' . $e->getMessage(), __METHOD__);
-      Yii::error($e->getTraceAsString(), __METHOD__);
-      return false;
-    }
   }
 
   private function getEmailList($emails)
@@ -729,20 +628,6 @@ class BeforeauthController extends Controller
     return false;
   }
 
-  private function normalizeInstallationRequestDate($value)
-  {
-    $value = trim($value);
-
-    foreach (array('Y-m-d', 'm/d/Y', 'm-d-Y', 'd/m/Y') as $format) {
-      $date = \DateTime::createFromFormat($format, $value);
-      if ($date && $date->format($format) === $value) {
-        return $date->format('Y-m-d');
-      }
-    }
-
-    return $value;
-  }
-
   //7
   public function actionGetnewsletter()
   {
@@ -952,75 +837,6 @@ class BeforeauthController extends Controller
     }
 
     Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'data' => $data));
-  }
-
-  //14
-  public function actionGetinstallation()
-  {
-    $data = Installation::find()->Where(['installation_id' => 1])->asArray()->one();
-
-    $data['video'] = Yii::$app->params['ImagePath'] . $data['video'];
-    $data['before_image'] = Yii::$app->params['ImagePath'] . $data['before_image'];
-    $data['after_image'] = Yii::$app->params['ImagePath'] . $data['after_image'];
-
-    $data['banner'] = [];
-
-    $installationbanners = Installationbanner::find()->asArray()->all();
-    foreach ($installationbanners as $key => $value_banner) {
-      $value_banner['image'] =
-        Yii::$app->params['ImagePath'] . $value_banner['image'];
-      $data['banner'][] = $value_banner;
-    }
-
-    $data['process'] = [];
-
-    $installationprocess = Installationprocess::find()->asArray()->all();
-    foreach ($installationprocess as $key => $value_process) {
-      $value_process['image'] =
-        Yii::$app->params['ImagePath'] . $value_process['image'];
-      $data['process'][] = $value_process;
-    }
-
-    Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'data' => $data));
-  }
-
-  public function actionGetwarranty()
-  {
-    $data = Warranty::find()->Where(['warranty_id' => 1])->asArray()->one();
-
-    $data['image'] = Yii::$app->params['ImagePath'] . $data['image'];
-
-    $data['document'] = [];
-
-    $warrantydocuments = WarrantyDocument::find()->Where(["warranty_id" => 1])->asArray()->all();
-    foreach ($warrantydocuments as $key => $value_document) {
-      $value_document['file'] =
-        Yii::$app->params['ImagePath'] . $value_document['file'];
-      $data['document'][] = $value_document;
-    }
-
-    $data['certificate'] = [];
-    $warrantycertificate = Warrantycertificate::find()->asArray()->all();
-    foreach ($warrantycertificate as $key => $value_certificate) {
-      $value_certificate['image'] = Yii::$app->params['ImagePath'] . $value_certificate['image'];
-      $data['certificate'][] = $value_certificate;
-    }
-
-    Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'data' => $data));
-  }
-
-  public function actionGetinstallationdetail()
-  {
-    $data = [
-      'space_type' => Spacetype::find()->asArray()->all() ?: [],
-      'installation_complexity' => Installationcomplexity::find()->asArray()->all() ?: [],
-      'subfloor_condition' => Subfloorcondition::find()->asArray()->all() ?: [],
-    ];
-
-    Yii::$app->MyFunctions->JsonPrint([
-      'status' => 1,
-      'data' => $data,
-    ]);
   }
 
   public function actionCreatepaymentintent()
