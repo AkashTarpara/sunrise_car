@@ -35,7 +35,7 @@ $this->params['breadcrumbs'][] = $this->title;
   }
 </style>
 <div class="text-center">
-  <?php $image = Yii::getAlias("@web") . "/uploads/default/login_logo.png"; ?>
+  <?php $image = Yii::getAlias('@web') . '/uploads/default/home-0.webp'; ?>
   <a href="#"><img src="<?= $image ?>" alt="img" style="padding: 20px; width:50%"></a>
 </div>
 <h4 class="text-center f-w-500 mb-3">Reset your Password</h4>

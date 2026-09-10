@@ -25,8 +25,7 @@ $baseUrl    = $asset->baseUrl;
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
 
-  <link rel="icon" type="image/png" sizes="32x32" href="<?= Yii::getAlias("@web") . "/uploads/default/favicon-32x32.png" ?>">
-  <link rel="icon" type="image/png" sizes="16x16" href="<?= Yii::getAlias("@web") . "/uploads/default/favicon-32x32.png" ?>">
+  <link rel="icon" type="image/webp" href="<?= Yii::getAlias('@web') . '/uploads/default/home-0.webp' ?>">
   <link rel="manifest" href="/site.webmanifest">
   <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#ff86d6">
   <meta name="msapplication-TileColor" content="#ff86d6">

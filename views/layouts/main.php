@@ -37,8 +37,7 @@ $adminsidemenu = Adminsidemenu::find()->Where(['status' => 'Active'])->orderBy([
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <link rel="icon" type="image/png" sizes="32x32" href="<?= Yii::$app->params['ImagePath'] . "uploads/default/favicon-32x32.png" ?>">
-  <link rel="icon" type="image/png" sizes="16x16" href="<?= Yii::$app->params['ImagePath'] . "uploads/default/favicon-32x32.png" ?>">
+  <link rel="icon" type="image/webp" href="<?= Yii::getAlias('@web') . '/uploads/default/home-0.webp' ?>">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
   <meta name="msapplication-TileColor" content="#ff86d6">
   <meta name="theme-color" content="#ffffff">
@@ -116,7 +115,7 @@ $adminsidemenu = Adminsidemenu::find()->Where(['status' => 'Active'])->orderBy([
 
 <body data-pc-preset="preset-1" data-pc-sidebar-caption="true" data-pc-direction="ltr" data-pc-theme_contrast="" data-pc-theme="light">
   <?php $this->beginBody() ?>
-  <?php $site_logo = (!empty(Yii::$app->user->identity->site_logo)) ? Yii::$app->params['ImagePath'] . Yii::$app->user->identity->site_logo : Yii::$app->params['ImagePath'] . "uploads/images/user/sitelogo/n019rcnic2bobua7nrp110sio3cqjh2f.svg"; ?>
+  <?php $site_logo = Yii::getAlias('@web') . '/uploads/default/home-0.webp'; ?>
 
   <div class="loader-bg">
     <div class="loader-track">
@@ -141,7 +140,7 @@ $adminsidemenu = Adminsidemenu::find()->Where(['status' => 'Active'])->orderBy([
           <div class="card-body">
             <div class="d-flex align-items-center">
               <div class="flex-shrink-0">
-                <?php $image = (!empty(Yii::$app->user->identity->image)) ? Yii::$app->params['ImagePath'] . Yii::$app->user->identity->image : Yii::$app->params['ImagePath'] . "uploads/images/user/sitelogo/n019rcnic2bobua7nrp110sio3cqjh2f.svg"; ?>
+                  <?php $image = (!empty(Yii::$app->user->identity->image)) ? Yii::$app->params['ImagePath'] . Yii::$app->user->identity->image : Yii::getAlias('@web') . '/uploads/default/home-0.webp'; ?>
                 <img src="<?= $image ?>" alt="user-image" class="user-avtar wid-45 rounded-circle" />
               </div>
               <div class="flex-grow-1 ms-3 me-2">

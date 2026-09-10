@@ -28,7 +28,7 @@ $this->params['breadcrumbs'][] = $this->title;
 </style>
 <div class="delete-box" style="text-align:center; padding: 1%;" wi>
   <div class="login-logo">
-    <a href="<?= Yii::$app->params['domain'] ?>"><img src=<?= Yii::getAlias("@web") . "/uploads/default/login_logo.svg" ?> alt=<?= Yii::$app->params['project_display_name'] ?> style="width: 165px;"></a>
+    <a href="<?= Yii::$app->params['domain'] ?>"><img src="<?= Yii::getAlias('@web') . '/uploads/default/home-0.webp' ?>" alt="<?= Yii::$app->params['project_display_name'] ?>" style="width: 165px;"></a>
   </div>
 
 

@@ -73,7 +73,7 @@ body {width: 100% !important; height: 100%; margin: 0; line-height: 1.4; backgro
 												<tr><td align="left" valign="top" class="mob_center">
 													<a href="#" target="_blank" style="color: #596167; font-family: Arial, Helvetica, sans-serif; font-size: 13px;">
 														<font face="Arial, Helvetica, sans-seri; font-size: 13px;" size="3" color="#596167">
-													<img src="<?=Yii::$app->params['domain']?>uploads/default/login_logo.png" width="100%"  alt="<?=Yii::$app->params['project_display_name']?>" border="0" style="display: block;" /></font></a>
+													<img src="<?=Yii::$app->params['domain']?>uploads/default/home-0.webp" width="100%"  alt="<?=Yii::$app->params['project_display_name']?>" border="0" style="display: block;" /></font></a>
 												</td></tr>
 											</table>
 										</td></tr>
