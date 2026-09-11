@@ -21,6 +21,7 @@ use app\models\Appuser;
 use app\models\Aboutus;
 use app\models\Advertisement;
 use app\models\Tradepropartner;
+use app\models\Fleet;
 
 use app\models\Importcsv;
 use Aws\S3\S3Client;
@@ -221,6 +222,60 @@ class BeforeauthController extends Controller
       }
     }
     Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'data' => $data));
+  }
+
+  public function actionGetfleetlist()
+  {
+    $query = Fleet::find()
+      ->where(['status' => 'Active', 'deleted_at' => null])
+      ->with('fleetImages')
+      ->orderBy(['id' => SORT_DESC]);
+
+    $type = Yii::$app->request->get('type', Yii::$app->request->post('type'));
+    if (!empty($type)) {
+      $query->andWhere(['type' => $type]);
+    }
+
+    $fleets = $query->all();
+    $data = [];
+    foreach ($fleets as $key => $fleet) {
+      $data[$key] = Yii::$app->MyFunctions->getFleetObject($fleet);
+    }
+
+    Yii::$app->MyFunctions->JsonPrint([
+      'status' => 1,
+      'message' => Yii::t('app', 'List found'),
+      'data' => $data,
+    ]);
+  }
+
+  public function actionGetfleetdetail()
+  {
+    $id = Yii::$app->request->get('id', Yii::$app->request->post('id'));
+    if (empty($id)) {
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => 0,
+        'message' => Yii::t('app', 'Fleet ID is required'),
+      ]);
+    }
+
+    $fleet = Fleet::find()
+      ->where(['id' => $id, 'status' => 'Active', 'deleted_at' => null])
+      ->with('fleetImages')
+      ->one();
+
+    if (empty($fleet)) {
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => 0,
+        'message' => Yii::t('app', 'Fleet not found.'),
+      ]);
+    }
+
+    Yii::$app->MyFunctions->JsonPrint([
+      'status' => 1,
+      'message' => Yii::t('app', 'Fleet found'),
+      'data' => Yii::$app->MyFunctions->getFleetObject($fleet),
+    ]);
   }
 
   //6

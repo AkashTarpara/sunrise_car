@@ -3,6 +3,7 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 $params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/db.php';
+$secondDb = require __DIR__ . '/second_db.php';
 
 $config = [
     'id' => 'basic-console',
@@ -53,6 +54,7 @@ $config = [
             ],
         ],
         'db' => $db,
+        'secondDb' => $secondDb,
         'authManager' => [
             'class' => 'yii\rbac\DbManager',
         ],

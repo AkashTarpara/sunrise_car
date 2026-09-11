@@ -2,6 +2,7 @@
 
 $params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/db.php';
+$secondDb = require __DIR__ . '/second_db.php';
 
 $config = [
     'id' => 'Sunrise Car',
@@ -137,6 +138,7 @@ $config = [
             ],
         ],
         'db' => $db,
+        'secondDb' => $secondDb,
         'assetManager' => [
             'bundles' => [
                 'yii\web\JqueryAsset' => [

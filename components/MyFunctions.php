@@ -1561,6 +1561,35 @@ class MyFunctions extends Component
     ];
   }
 
+  public function getFleetObject($model)
+  {
+    if (empty($model)) {
+      return [];
+    }
+
+    $images = [];
+    foreach ($model->fleetImages as $key => $fleetImage) {
+      $images[$key] = [
+        'id' => $fleetImage->id,
+        'image' => !empty($fleetImage->image) ? Yii::$app->params['ImagePath'] . $fleetImage->image : '',
+      ];
+    }
+
+    return [
+      'id' => $model->id,
+      'label' => $model->label,
+      'name' => $model->name,
+      'passenger' => $model->passenger,
+      'laggage' => $model->laggage,
+      'description' => $model->description,
+      'status' => $model->status,
+      'type' => $model->type,
+      'images' => $images,
+      'created_at' => $model->created_at,
+      'updated_at' => $model->updated_at,
+    ];
+  }
+
   public function getProductHomeObject($model)
   {
     $data = [];
