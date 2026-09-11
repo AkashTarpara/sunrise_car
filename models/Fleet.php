@@ -30,10 +30,10 @@ class Fleet extends \yii\db\ActiveRecord
     {
         return [
             [['label', 'name', 'type'], 'required'],
-            [['passenger', 'laggage'], 'integer'],
+            [['laggage'], 'integer'],
             [['description'], 'string'],
             [['created_at', 'updated_at', 'deleted_at', 'images'], 'safe'],
-            [['label', 'name'], 'string', 'max' => 255],
+            [['label', 'name', 'passenger'], 'string', 'max' => 255],
             [['status'], 'in', 'range' => ['Active', 'Inactive']],
             [['type'], 'in', 'range' => array_keys(self::typeOptions())],
             [['status'], 'default', 'value' => 'Active'],

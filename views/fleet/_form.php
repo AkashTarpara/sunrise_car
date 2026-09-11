@@ -13,7 +13,7 @@ $form = ActiveForm::begin(['options' => ['enctype' => 'multipart/form-data']]);
 </div>
 
 <div class="row">
-    <div class="col-md-3"><?= $form->field($model, 'passenger')->textInput(['type' => 'number', 'min' => 0]) ?></div>
+    <div class="col-md-3"><?= $form->field($model, 'passenger')->textInput(['maxlength' => true]) ?></div>
     <div class="col-md-3"><?= $form->field($model, 'laggage')->textInput(['type' => 'number', 'min' => 0]) ?></div>
     <div class="col-md-3"><?= $form->field($model, 'type')->dropDownList(Fleet::typeOptions(), ['prompt' => 'Select Type']) ?></div>
     <div class="col-md-3"><?= $form->field($model, 'status')->dropDownList(['Active' => 'Active', 'Inactive' => 'Inactive']) ?></div>

@@ -10,7 +10,7 @@ class m260911_173500_create_fleet_tables extends Migration
             'id' => $this->primaryKey(),
             'label' => $this->string(255)->notNull(),
             'name' => $this->string(255)->notNull(),
-            'passenger' => $this->integer()->null(),
+            'passenger' => $this->string(255)->null(),
             'laggage' => $this->integer()->null(),
             'description' => $this->text()->null(),
             'status' => "ENUM('Active','Inactive') NOT NULL DEFAULT 'Active'",

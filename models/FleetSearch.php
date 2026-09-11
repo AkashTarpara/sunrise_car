@@ -10,8 +10,8 @@ class FleetSearch extends Fleet
     public function rules()
     {
         return [
-            [['id', 'passenger', 'laggage'], 'integer'],
-            [['label', 'name', 'status', 'type'], 'safe'],
+            [['id', 'laggage'], 'integer'],
+            [['label', 'name', 'passenger', 'status', 'type'], 'safe'],
         ];
     }
 
@@ -38,14 +38,14 @@ class FleetSearch extends Fleet
 
         $query->andFilterWhere([
             'id' => $this->id,
-            'passenger' => $this->passenger,
             'laggage' => $this->laggage,
             'status' => $this->status,
             'type' => $this->type,
         ]);
 
         $query->andFilterWhere(['like', 'label', $this->label])
-            ->andFilterWhere(['like', 'name', $this->name]);
+            ->andFilterWhere(['like', 'name', $this->name])
+            ->andFilterWhere(['like', 'passenger', $this->passenger]);
 
         return $dataProvider;
     }
