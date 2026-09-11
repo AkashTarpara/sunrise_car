@@ -3,6 +3,8 @@
 !/assets/AppAsset.php
 /runtime/*
 /uploads/images/*
+!/uploads/images/fleet/
+!/uploads/images/fleet/*.jpg
 /uploads/editorimage/*
 /uploads/thumbnail/*
 /uploads/csv/*

@@ -14,7 +14,7 @@ class m260911_173500_create_fleet_tables extends Migration
             'laggage' => $this->integer()->null(),
             'description' => $this->text()->null(),
             'status' => "ENUM('Active','Inactive') NOT NULL DEFAULT 'Active'",
-            'type' => "ENUM('SEDANS','SUVS','LIMOUSINES','VANS','BUSES','MOTORCYCLES','TRUCKS') NOT NULL",
+            'type' => "ENUM('SEDANS','SUVS','LIMOUSINES','SPRINTERS','VANS','BUSES','MOTORCYCLES','TRUCKS') NOT NULL",
             'created_at' => $this->dateTime()->notNull()->defaultExpression('CURRENT_TIMESTAMP'),
             'updated_at' => $this->dateTime()->null(),
             'deleted_at' => $this->dateTime()->null(),

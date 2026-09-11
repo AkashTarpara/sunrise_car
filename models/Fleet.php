@@ -19,6 +19,7 @@ class Fleet extends \yii\db\ActiveRecord
             'SEDANS' => 'SEDANS',
             'SUVS' => 'SUVS',
             'LIMOUSINES' => 'LIMOUSINES',
+            'SPRINTERS' => 'SPRINTERS',
             'VANS' => 'VANS',
             'BUSES' => 'BUSES',
             'MOTORCYCLES' => 'MOTORCYCLES',
