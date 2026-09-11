@@ -249,6 +249,15 @@ class BeforeauthController extends Controller
     ]);
   }
 
+  public function actionGetfleettypes()
+  {
+    Yii::$app->MyFunctions->JsonPrint([
+      'status' => 1,
+      'message' => Yii::t('app', 'Fleet types found'),
+      'data' => array_values(Fleet::typeOptions()),
+    ]);
+  }
+
   public function actionGetfleetdetail()
   {
     $id = Yii::$app->request->get('id', Yii::$app->request->post('id'));
