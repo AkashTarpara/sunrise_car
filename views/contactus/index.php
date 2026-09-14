@@ -25,22 +25,13 @@ $this->params['breadcrumbs'][] = $this->title;
                 ['class' => 'yii\grid\SerialColumn'],
 
                 [
-                    'label' => 'First Name',
+                    'label' => 'Full Name',
                     'vAlign' => 'middle',
                     'value' => function ($model, $key, $index, $widget) {
-                        return $model->first_name;
+                        return $model->full_name;
                     },
                     'format' => 'text',
                 ],
-                [
-                    'label' => 'Last Name',
-                    'vAlign' => 'middle',
-                    'value' => function ($model, $key, $index, $widget) {
-                        return $model->last_name;
-                    },
-                    'format' => 'text',
-                ],
-
 
                 [
                     'label' => 'Email',
@@ -52,19 +43,19 @@ $this->params['breadcrumbs'][] = $this->title;
                 ],
 
                 [
-                    'label' => 'Number',
+                    'label' => 'Phone Number',
                     'vAlign' => 'middle',
                     'value' => function ($model, $key, $index, $widget) {
-                        return  $model->number;
+                        return  $model->phone_number;
                     },
                     'format' => 'raw'
                 ],
 
                 [
-                    'label' => 'Address',
+                    'label' => 'Subject',
                     'vAlign' => 'middle',
                     'value' => function ($model, $key, $index, $widget) {
-                        return  $model->address;
+                        return  $model->subject;
                     },
                     'format' => 'raw'
                 ],
@@ -132,10 +123,10 @@ $this->params['breadcrumbs'][] = $this->title;
                         ['class' => 'yii\grid\SerialColumn'],
 
                         //'contact_us_id',
-                        'first_name',
-                        'last_name',
+                        'full_name',
                         'email:email',
-                        'number',
+                        'phone_number',
+                        'subject',
                         //'message:ntext',
                         'created_at',
                         [

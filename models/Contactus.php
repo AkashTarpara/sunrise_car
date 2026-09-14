@@ -8,9 +8,10 @@ use Yii;
  * This is the model class for table "contact_us".
  *
  * @property int $contact_us_id
- * @property string $first_name
- * @property string $last_name
+ * @property string $full_name
  * @property string $email
+ * @property string $phone_number
+ * @property string $subject
  * @property string $message
  * @property string $created_at
  */
@@ -30,12 +31,12 @@ class Contactus extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['first_name', 'last_name', 'email', 'message'], 'required'],
-            [['message', 'address'], 'string'],
-            [['created_at', 'number', 'address'], 'safe'],
+            [['full_name', 'email', 'phone_number', 'subject', 'message'], 'required'],
+            [['message'], 'string'],
+            [['created_at'], 'safe'],
+            ['email', 'email'],
             ['created_at', 'default', 'value' => date('Y-m-d H:i:s')],
-            [['number', 'address'], 'default', 'value' => ''],
-            [['first_name', 'last_name', 'email', 'number'], 'string', 'max' => 255],
+            [['full_name', 'email', 'phone_number', 'subject'], 'string', 'max' => 255],
         ];
     }
 
@@ -46,11 +47,10 @@ class Contactus extends \yii\db\ActiveRecord
     {
         return [
             'contact_us_id' => Yii::t('app', 'Contact Us ID'),
-            'first_name' => Yii::t('app', 'First Name'),
-            'last_name' => Yii::t('app', 'Last Name'),
+            'full_name' => Yii::t('app', 'Full Name'),
             'email' => Yii::t('app', 'Email'),
-            'number' => Yii::t('app', 'Number'),
-            'address' => Yii::t('app', 'Address'),
+            'phone_number' => Yii::t('app', 'Phone Number'),
+            'subject' => Yii::t('app', 'Subject'),
             'message' => Yii::t('app', 'Message'),
             'created_at' => Yii::t('app', 'Created At'),
         ];

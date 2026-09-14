@@ -31,6 +31,7 @@ use Stripe\PaymentIntent;
 //use yii2tech\filestorage\storage\Storage;
 $allowed_origins = [
   'http://localhost:5173',
+  'https://texiweb.netlify.app',
   'https://www.luxurylayers.pro/',
   'https://www.luxurylayers.pro',
 ];
@@ -56,6 +57,11 @@ class BeforeauthController extends Controller
 
     global $dynamicmodule;
     $this->enableCsrfValidation = false;
+
+    if (Yii::$app->request->isOptions) {
+      Yii::$app->response->statusCode = 204;
+      Yii::$app->end();
+    }
 
     Yii::$app->language = (isset($_REQUEST['lang']) && !empty($_REQUEST['lang'])) ? $_REQUEST['lang'] : 'en';
     $lang = array('en', 'es');
@@ -291,10 +297,45 @@ class BeforeauthController extends Controller
   public function actionContactus()
   {
     $model = new Contactus();
-    $model->load($_REQUEST);
+    $request = Yii::$app->request;
+    $payload = is_array($request->bodyParams) ? $request->bodyParams : array();
+    $rawBody = trim($request->rawBody);
+
+    if ($rawBody !== '') {
+      $jsonPayload = json_decode($rawBody, true);
+      if (is_array($jsonPayload)) {
+        $payload = array_merge($payload, $jsonPayload);
+      }
+    }
+
+    $payload = array_merge($request->get(), $payload);
+    $getValue = function ($key, $default = '') use ($payload) {
+      return isset($payload[$key]) ? $payload[$key] : $default;
+    };
+
+    $model->load([
+      'full_name' => trim($getValue('full_name', $getValue('name'))),
+      'email' => trim($getValue('email')),
+      'phone_number' => trim($getValue('phone_number', $getValue('phone'))),
+      'subject' => trim($getValue('subject')),
+      'message' => trim($getValue('message')),
+    ], '');
+
     if ($model->validate() && $model->save()) {
       $message = Yii::t('app', 'Thanks for the message, one of our team will be in touch shortly');
-      Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'message' => $message));
+      Yii::$app->MyFunctions->JsonPrint(array(
+        'status' => 1,
+        'message' => $message,
+        'data' => array(
+          'contact_us_id' => $model->contact_us_id,
+          'full_name' => $model->full_name,
+          'email' => $model->email,
+          'phone_number' => $model->phone_number,
+          'subject' => $model->subject,
+          'message' => $model->message,
+          'created_at' => $model->created_at,
+        ),
+      ));
     }
     Yii::$app->MyFunctions->getModelErrors($model, "Y");
   }

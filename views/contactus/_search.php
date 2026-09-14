@@ -17,11 +17,13 @@ use yii\widgets\ActiveForm;
 
     <?= $form->field($model, 'contact_us_id') ?>
 
-    <?= $form->field($model, 'first_name') ?>
-
-    <?= $form->field($model, 'last_name') ?>
+    <?= $form->field($model, 'full_name') ?>
 
     <?= $form->field($model, 'email') ?>
+
+    <?= $form->field($model, 'phone_number') ?>
+
+    <?= $form->field($model, 'subject') ?>
 
     <?= $form->field($model, 'message') ?>
 

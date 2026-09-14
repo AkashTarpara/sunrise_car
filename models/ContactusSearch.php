@@ -18,7 +18,7 @@ class ContactusSearch extends Contactus
     {
         return [
             [['contact_us_id'], 'integer'],
-            [['first_name', 'last_name', 'email', 'number', 'address', 'message', 'created_at'], 'safe'],
+            [['full_name', 'email', 'phone_number', 'subject', 'message', 'created_at'], 'safe'],
         ];
     }
 
@@ -63,11 +63,10 @@ class ContactusSearch extends Contactus
             'created_at' => $this->created_at,
         ]);
 
-        $query->andFilterWhere(['like', 'first_name', $this->first_name])
-            ->andFilterWhere(['like', 'last_name', $this->last_name])
+        $query->andFilterWhere(['like', 'full_name', $this->full_name])
             ->andFilterWhere(['like', 'email', $this->email])
-            ->andFilterWhere(['like', 'number', $this->number])
-            ->andFilterWhere(['like', 'address', $this->address])
+            ->andFilterWhere(['like', 'phone_number', $this->phone_number])
+            ->andFilterWhere(['like', 'subject', $this->subject])
             ->andFilterWhere(['like', 'message', $this->message]);
 
         return $dataProvider;
