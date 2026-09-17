@@ -264,6 +264,57 @@ class BeforeauthController extends Controller
     ]);
   }
 
+  public function actionEmpirelocationdetail()
+  {
+    $params = array_merge(
+      Yii::$app->request->get(),
+      Yii::$app->request->post()
+    );
+
+    unset($params['r'], $params['lang'], $params['wizardKey']);
+    $params['wizardKey'] = 'JUimBI8EM9g-FiM0fWOqx1FhARRQirxd4b6vGWoeu4QOd_ouq7eWhLWBW24qGlebD8BUEiJ_P4h9BhNXrIQ5vA';
+
+    $url = 'https://booking.empirecls.com/Webconnect/DefaultV2/Booking/AjaxLocationUniversalSearchGetDetail?' . http_build_query($params);
+
+    $curl = curl_init();
+    curl_setopt_array($curl, [
+      CURLOPT_URL => $url,
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_FOLLOWLOCATION => true,
+      CURLOPT_TIMEOUT => 30,
+      CURLOPT_CONNECTTIMEOUT => 10,
+      CURLOPT_HTTPHEADER => [
+        'Accept: application/json, text/javascript, */*; q=0.01',
+        'X-Requested-With: XMLHttpRequest',
+        'Cookie: GWWCTISCOKIEON=yes; prod-booking=20c2753a5a21f1252c48a2cbc2abe5d7; prod-bookingCORS=20c2753a5a21f1252c48a2cbc2abe5d7',
+      ],
+    ]);
+
+    $response = curl_exec($curl);
+    $curlError = curl_error($curl);
+    $httpStatusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    curl_close($curl);
+
+    if ($response === false) {
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => 0,
+        'message' => $curlError ?: Yii::t('app', 'Unable to fetch location detail'),
+      ], 502);
+    }
+
+    $decodedResponse = json_decode($response, true);
+    $data = (json_last_error() === JSON_ERROR_NONE) ? $decodedResponse : $response;
+
+    Yii::$app->MyFunctions->JsonPrint([
+      'status' => ($httpStatusCode >= 200 && $httpStatusCode < 300) ? 1 : 0,
+      'message' => ($httpStatusCode >= 200 && $httpStatusCode < 300)
+        ? Yii::t('app', 'Location detail fetched successfully')
+        : Yii::t('app', 'Unable to fetch location detail'),
+      'http_status' => $httpStatusCode,
+      'data' => $data,
+    ], ($httpStatusCode >= 200 && $httpStatusCode < 300) ? 200 : 502);
+  }
+
   public function actionGetfleetdetail()
   {
     $id = Yii::$app->request->get('id', Yii::$app->request->post('id'));
