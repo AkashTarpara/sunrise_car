@@ -2,3 +2,13 @@ RewriteEngine on
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule . index.php [L]
+
+<IfModule mod_headers.c>
+	SetEnvIf Origin "^https?://(localhost:(3001|3002|3003)|52\.15\.131\.71)$" CORS_ALLOW_ORIGIN=$0
+	Header always set Access-Control-Allow-Origin "%{CORS_ALLOW_ORIGIN}e" env=CORS_ALLOW_ORIGIN
+	Header always set Access-Control-Allow-Credentials "true" env=CORS_ALLOW_ORIGIN
+	Header always set Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" env=CORS_ALLOW_ORIGIN
+	Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, X-CSRF-Token" env=CORS_ALLOW_ORIGIN
+	Header always set Access-Control-Max-Age "86400" env=CORS_ALLOW_ORIGIN
+	Header always merge Vary Origin
+</IfModule>
