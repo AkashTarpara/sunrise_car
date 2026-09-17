@@ -11,6 +11,14 @@ $config = [
     'bootstrap' => ['log'],
     'timeZone' => 'Asia/Kolkata',
 
+    'on beforeRequest' => function () {
+        if (Yii::$app->request->isOptions) {
+            Yii::$app->response->statusCode = 204;
+            Yii::$app->response->data = null;
+            Yii::$app->end();
+        }
+    },
+
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',
@@ -33,6 +41,36 @@ $config = [
             'enableCsrfValidation' => false,
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => 'xzq9rbJWY6LRHTOkHZ-dsfsfw',
+        ],
+        'response' => [
+            'class' => 'yii\web\Response',
+            'on beforeSend' => function ($event) {
+                $request = Yii::$app->request;
+                $response = $event->sender;
+                $origin = $request->headers->get('Origin');
+                $allowedOrigins = [
+                    'http://localhost:3001',
+                    'http://localhost:3002',
+                    'http://localhost:3003',
+                    'http://52.15.131.71',
+                ];
+
+                if ($origin && in_array($origin, $allowedOrigins, true)) {
+                    $response->headers->set('Access-Control-Allow-Origin', $origin);
+                    $response->headers->set('Access-Control-Allow-Credentials', 'true');
+                    $response->headers->set('Vary', 'Origin');
+                }
+
+                $response->headers->set(
+                    'Access-Control-Allow-Methods',
+                    'GET, POST, PUT, PATCH, DELETE, OPTIONS'
+                );
+                $response->headers->set(
+                    'Access-Control-Allow-Headers',
+                    'Content-Type, Authorization, X-Requested-With, X-CSRF-Token'
+                );
+                $response->headers->set('Access-Control-Max-Age', '86400');
+            },
         ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
