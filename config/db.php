@@ -12,6 +12,7 @@ echo "DB User: " . $dbUser . PHP_EOL;
 echo "DB Password: " . $dbPassword . PHP_EOL;
 // echo '</pre>'; exit;
 
+
 return [
     'class' => 'yii\db\Connection',
     'dsn' => 'mysql:host=' . $dbHost . ';dbname=' . $dbName,
