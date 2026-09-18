@@ -274,7 +274,7 @@ class BeforeauthController extends Controller
     unset($params['r'], $params['lang'], $params['wizardKey']);
     $params['wizardKey'] = 'Fwfjv7j2r02qjW5t8Z5Yt1qfgWBQBOSZJFZywHek52U2JLFxvFhgTzxDty8r-NUwNaoHJ_8Kj4RUO_ph9OZT9w';
 
-    $url = 'https://booking.empirecls.com/Webconnect/DefaultV2/Booking/AjaxLocationUniversalSearchGetDetail?' . http_build_query($params);
+    $url = 'https://booking.empirecls.com/Webconnect/DefaultV2/Booking/AjaxLocationUniversalSearch?' . http_build_query($params);
     echo $url;exit;
     $curl = curl_init();
     curl_setopt_array($curl, [
