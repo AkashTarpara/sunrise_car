@@ -1,4 +1,8 @@
-RewriteEngine on
-RewriteCond %{REQUEST_FILENAME} !-d
+RewriteEngine On
+
+# If a directory or file exists, use it directly
 RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Otherwise route to Yii
 RewriteRule . index.php [L]

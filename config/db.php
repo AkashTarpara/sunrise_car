@@ -1,5 +1,17 @@
 <?php
 
+$dbHost = $_ENV['DB_HOST'] ?: '127.0.0.1';
+$dbName = $_ENV['DB_NAME'] ?: '';
+$dbUser = $_ENV['DB_USER'] ?: '';
+$dbPassword = $_ENV['DB_PASSWORD'] ?: '';
+
+echo '<pre>';
+echo "DB Host: " . $dbHost . PHP_EOL;
+echo "DB Name: " . $dbName . PHP_EOL;
+echo "DB User: " . $dbUser . PHP_EOL;
+echo "DB Password: " . $dbPassword . PHP_EOL;
+echo '</pre>'; exit;
+
 return [
     'class' => 'yii\db\Connection',
     'dsn' => 'mysql:host=' . ($_ENV['DB_HOST'] ?: '127.0.0.1') . ';dbname=' . ($_ENV['DB_NAME'] ?: ''),
