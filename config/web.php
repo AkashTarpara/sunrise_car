@@ -73,7 +73,7 @@ $config = [
                 );
                 $response->headers->set(
                     'Access-Control-Allow-Headers',
-                    'Content-Type, Authorization, X-Requested-With, X-CSRF-Token'
+                    'Content-Type, Authorization, X-Requested-With, X-CSRF-Token, X-Idempotency-Key'
                 );
                 $response->headers->set('Access-Control-Max-Age', '86400');
             },
