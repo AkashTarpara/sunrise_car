@@ -50,6 +50,15 @@ class Booking extends \yii\db\ActiveRecord
         return $this->hasOne(Fleet::class, ['id' => 'fleet_id']);
     }
 
+    public function beforeValidate()
+    {
+        if ($this->isNewRecord && empty($this->booking_number)) {
+            $this->booking_number = 'SUN-' . date('ymdHis') . '-' . strtoupper(substr(uniqid(), -4));
+        }
+
+        return parent::beforeValidate();
+    }
+
     public function beforeSave($insert)
     {
         if (!parent::beforeSave($insert)) {
