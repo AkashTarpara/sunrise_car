@@ -11,6 +11,7 @@ class FleetSearch extends Fleet
     {
         return [
             [['id', 'laggage'], 'integer'],
+            [['base_price', 'km_per_hour_price'], 'number'],
             [['label', 'name', 'passenger', 'status', 'type'], 'safe'],
         ];
     }
@@ -39,6 +40,8 @@ class FleetSearch extends Fleet
         $query->andFilterWhere([
             'id' => $this->id,
             'laggage' => $this->laggage,
+            'base_price' => $this->base_price,
+            'km_per_hour_price' => $this->km_per_hour_price,
             'status' => $this->status,
             'type' => $this->type,
         ]);

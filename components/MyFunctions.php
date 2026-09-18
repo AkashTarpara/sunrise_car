@@ -1581,6 +1581,8 @@ class MyFunctions extends Component
       'name' => $model->name,
       'passenger' => $model->passenger,
       'laggage' => $model->laggage,
+      'base_price' => $model->base_price,
+      'km_per_hour_price' => $model->km_per_hour_price,
       'description' => $model->description,
       'status' => $model->status,
       'type' => $model->type,

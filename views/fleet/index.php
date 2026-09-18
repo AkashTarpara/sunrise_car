@@ -30,6 +30,8 @@ $this->params['breadcrumbs'][] = $this->title;
                         'name',
                         'passenger',
                         'laggage',
+                        'base_price',
+                        'km_per_hour_price',
                         'type',
                         'status',
                         'created_at',
