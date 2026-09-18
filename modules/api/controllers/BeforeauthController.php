@@ -22,6 +22,7 @@ use app\models\Aboutus;
 use app\models\Advertisement;
 use app\models\Tradepropartner;
 use app\models\Fleet;
+use app\models\Booking;
 
 use app\models\Importcsv;
 use Aws\S3\S3Client;
