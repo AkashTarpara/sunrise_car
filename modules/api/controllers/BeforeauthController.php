@@ -56,7 +56,9 @@ class BeforeauthController extends Controller
   {
     $payload = Yii::$app->request->getBodyParams();
     if (empty($payload)) {
-      $payload = $_REQUEST;
+      $rawBody = file_get_contents('php://input');
+      $decodedBody = json_decode($rawBody, true);
+      $payload = is_array($decodedBody) ? $decodedBody : $_REQUEST;
     }
 
     $ride = isset($payload['ride']) && is_array($payload['ride']) ? $payload['ride'] : [];
