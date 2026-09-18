@@ -10,7 +10,7 @@ echo "DB Host: " . $dbHost . PHP_EOL;
 echo "DB Name: " . $dbName . PHP_EOL;
 echo "DB User: " . $dbUser . PHP_EOL;
 echo "DB Password: " . $dbPassword . PHP_EOL;
-echo '</pre>'; exit;
+// echo '</pre>'; exit;
 
 return [
     'class' => 'yii\db\Connection',
