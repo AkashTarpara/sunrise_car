@@ -52,9 +52,145 @@ class BeforeauthController extends Controller
   public $PAYMENT_STRIPE_MODE = 'live';
   public $PAYMENT_STRIPE_LIVE_SECRET_KEY = '';
   public $PAYMENT_STRIPE_TEST_SECRET_KEY = '';
+  public function actionCreatebookingpaymentintent()
+  {
+    $payload = Yii::$app->request->getBodyParams();
+    if (empty($payload)) {
+      $payload = $_REQUEST;
+    }
+
+    $ride = isset($payload['ride']) && is_array($payload['ride']) ? $payload['ride'] : [];
+    $passenger = isset($payload['passenger']) && is_array($payload['passenger']) ? $payload['passenger'] : [];
+    $quote = isset($payload['quote']) && is_array($payload['quote']) ? $payload['quote'] : [];
+    $fleetId = (int) ($payload['vehicleId'] ?? 0);
+    $pickupDate = trim((string) ($ride['date'] ?? ''));
+    $pickupTime = trim((string) ($ride['time'] ?? ''));
+
+    if (!$fleetId || !$pickupDate || !$pickupTime || empty($passenger['name']) || empty($passenger['email']) || empty($passenger['phone']) || empty($payload['termsAccepted'])) {
+      Yii::$app->MyFunctions->JsonPrint(['status' => 0, 'message' => 'Vehicle, date, time, passenger details, and termsAccepted are required'], 400);
+    }
+
+    $date = \DateTime::createFromFormat('!Y-m-d', $pickupDate);
+    $time = \DateTime::createFromFormat('!H:i', $pickupTime);
+    if (!$date || $date->format('Y-m-d') !== $pickupDate || !$time || $time->format('H:i') !== $pickupTime) {
+      Yii::$app->MyFunctions->JsonPrint(['status' => 0, 'message' => 'ride.date must be YYYY-MM-DD and ride.time must be HH:MM'], 400);
+    }
+
+    $fleet = Fleet::find()->where(['id' => $fleetId, 'status' => 'Active', 'deleted_at' => null])->one();
+    if (!$fleet) {
+      Yii::$app->MyFunctions->JsonPrint(['status' => 0, 'message' => 'Selected vehicle is not available'], 404);
+    }
+
+    $total = round((float) $fleet->base_price, 2);
+    $currency = strtolower((string) ($payload['currency'] ?? 'usd'));
+    $paymentMode = Yii::$app->params['payment_stripe_mode'];
+    $secretKey = $paymentMode === 'live'
+      ? Yii::$app->params['payment_stripe_live_secret_key']
+      : Yii::$app->params['payment_stripe_test_secret_key'];
+
+    if (!$secretKey) {
+      Yii::$app->MyFunctions->JsonPrint(['status' => 0, 'message' => 'Payment gateway is not configured'], 500);
+    }
+
+    try {
+      Stripe::setApiKey($secretKey);
+      $paymentIntent = PaymentIntent::create([
+        'amount' => (int) round($total * 100),
+        'currency' => $currency,
+        'automatic_payment_methods' => ['enabled' => true],
+        'metadata' => [
+          'vehicle_id' => (string) $fleet->id,
+          'pickup_date' => $pickupDate,
+          'pickup_time' => $pickupTime,
+        ],
+      ]);
+
+      $booking = new Booking();
+      $booking->fleet_id = $fleet->id;
+      $booking->pickup_date = $pickupDate;
+      $booking->pickup_time = $pickupTime;
+      $booking->service = $ride['service'] ?? null;
+      $booking->pickup_location_type = $ride['pickupLocationType'] ?? null;
+      $booking->dropoff_location_type = $ride['dropoffLocationType'] ?? null;
+      $booking->pickup = $ride['pickup'] ?? null;
+      $booking->dropoff = $ride['dropoff'] ?? null;
+      $booking->ride_data = json_encode($ride);
+      $booking->quote_data = json_encode($quote);
+      $booking->extras = json_encode($payload['extras'] ?? []);
+      $booking->notes = $payload['notes'] ?? null;
+      $booking->passenger_data = json_encode($passenger);
+      $booking->promo_code = $payload['promoCode'] ?? null;
+      $booking->payment_preference = $payload['paymentPreference'] ?? null;
+      $booking->terms_accepted = true;
+      $booking->base_price = $fleet->base_price;
+      $booking->km_per_hour_price = $fleet->km_per_hour_price;
+      $booking->distance_price = (float) ($quote['distance_price'] ?? 0);
+      $booking->total = $total;
+      $booking->currency = $currency;
+      $booking->payment_intent_id = $paymentIntent->id;
+      $booking->payment_status = 'pending';
+      $booking->booking_status = 'pending_payment';
+
+      if (!$booking->save()) {
+        $paymentIntent->cancel();
+        Yii::$app->MyFunctions->JsonPrint(['status' => 0, 'message' => 'Booking could not be saved', 'errors' => $booking->getErrors()], 500);
+      }
+
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => 1,
+        'message' => 'Booking created and payment initialized',
+        'data' => [
+          'bookingId' => $booking->id,
+          'bookingNumber' => $booking->booking_number,
+          'clientSecret' => $paymentIntent->client_secret,
+          'paymentIntentId' => $paymentIntent->id,
+          'total' => $total,
+          'currency' => $currency,
+          'paymentStatus' => $booking->payment_status,
+          'bookingStatus' => $booking->booking_status,
+        ],
+      ]);
+    } catch (\Throwable $exception) {
+      Yii::error($exception->getMessage(), 'booking.payment');
+      Yii::$app->MyFunctions->JsonPrint(['status' => 0, 'message' => $exception->getMessage()], 500);
+    }
+  }
+
+  public function actionConfirmbookingpayment()
+  {
+    $bookingId = (int) Yii::$app->request->post('bookingId', Yii::$app->request->get('bookingId'));
+    $paymentIntentId = Yii::$app->request->post('paymentIntentId', Yii::$app->request->get('paymentIntentId'));
+    $booking = Booking::findOne(['id' => $bookingId, 'payment_intent_id' => $paymentIntentId]);
+    if (!$booking) {
+      Yii::$app->MyFunctions->JsonPrint(['status' => 0, 'message' => 'Booking not found'], 404);
+    }
+
+    $paymentMode = Yii::$app->params['payment_stripe_mode'];
+    $secretKey = $paymentMode === 'live'
+      ? Yii::$app->params['payment_stripe_live_secret_key']
+      : Yii::$app->params['payment_stripe_test_secret_key'];
+
+    try {
+      Stripe::setApiKey($secretKey);
+      $paymentIntent = PaymentIntent::retrieve($paymentIntentId);
+      $booking->payment_status = $paymentIntent->status === 'succeeded' ? 'paid' : $paymentIntent->status;
+      $booking->booking_status = $paymentIntent->status === 'succeeded' ? 'confirmed' : 'pending_payment';
+      $booking->save(false, ['payment_status', 'booking_status', 'updated_at']);
+
+      Yii::$app->MyFunctions->JsonPrint(['status' => 1, 'data' => [
+        'bookingId' => $booking->id,
+        'bookingNumber' => $booking->booking_number,
+        'paymentStatus' => $booking->payment_status,
+        'bookingStatus' => $booking->booking_status,
+      ]]);
+    } catch (\Throwable $exception) {
+      Yii::error($exception->getMessage(), 'booking.payment');
+      Yii::$app->MyFunctions->JsonPrint(['status' => 0, 'message' => $exception->getMessage()], 500);
+    }
+  }
+
   public function beforeAction($action)
   {
-
     global $dynamicmodule;
     $this->enableCsrfValidation = false;
 

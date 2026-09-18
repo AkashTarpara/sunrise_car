@@ -1,5 +1,8 @@
 <?php
 
+$dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
+$dotenv->safeLoad();
+
 $params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/db.php';
 $secondDb = require __DIR__ . '/second_db.php';
