@@ -32,12 +32,15 @@ class Fleet extends \yii\db\ActiveRecord
         return [
             [['label', 'name', 'type'], 'required'],
             [['laggage'], 'integer'],
+            [['base_price', 'km_per_hour_price'], 'number', 'min' => 0],
             [['description'], 'string'],
             [['created_at', 'updated_at', 'deleted_at', 'images'], 'safe'],
             [['label', 'name', 'passenger'], 'string', 'max' => 255],
             [['status'], 'in', 'range' => ['Active', 'Inactive']],
             [['type'], 'in', 'range' => array_keys(self::typeOptions())],
             [['status'], 'default', 'value' => 'Active'],
+            [['base_price'], 'default', 'value' => 100],
+            [['km_per_hour_price'], 'default', 'value' => 24],
             [['images'], 'file', 'extensions' => ['png', 'jpg', 'jpeg', 'webp', 'gif'], 'maxFiles' => 20],
         ];
     }
@@ -50,6 +53,8 @@ class Fleet extends \yii\db\ActiveRecord
             'name' => Yii::t('app', 'Name'),
             'passenger' => Yii::t('app', 'Passenger'),
             'laggage' => Yii::t('app', 'Laggage'),
+            'base_price' => Yii::t('app', 'Base Price'),
+            'km_per_hour_price' => Yii::t('app', 'Km Per Hour Price'),
             'description' => Yii::t('app', 'Description'),
             'status' => Yii::t('app', 'Status'),
             'type' => Yii::t('app', 'Type'),

@@ -19,6 +19,11 @@ $form = ActiveForm::begin(['options' => ['enctype' => 'multipart/form-data']]);
     <div class="col-md-3"><?= $form->field($model, 'status')->dropDownList(['Active' => 'Active', 'Inactive' => 'Inactive']) ?></div>
 </div>
 
+<div class="row">
+    <div class="col-md-6"><?= $form->field($model, 'base_price')->textInput(['type' => 'number', 'min' => 0, 'step' => '0.01']) ?></div>
+    <div class="col-md-6"><?= $form->field($model, 'km_per_hour_price')->textInput(['type' => 'number', 'min' => 0, 'step' => '0.01']) ?></div>
+</div>
+
 <?= $form->field($model, 'description')->textarea(['rows' => 5]) ?>
 
 <?= $form->field($model, 'images[]')->fileInput(['multiple' => true, 'accept' => 'image/*']) ?>
