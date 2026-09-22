@@ -21,15 +21,10 @@ use wbraganca\dynamicform\DynamicFormWidget;
     </div>
     <div class="row">
         <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-12">
-            <?= $form->field($model, 'terms_conditions_trade_pro')->textarea(['rows' => 6]) ?>
-        </div>
-    </div>
-    <div class="row">
-        <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-12">
             <?= $form->field($model, 'privacy_policy')->textarea(['rows' => 6]) ?>
         </div>
     </div>
-    <div class="row">
+    <div class="row" style="display:none;">
         <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-12">
             <?= $form->field($model, 'pick_up_delivery')->textarea(['rows' => 6]) ?>
         </div>
@@ -74,7 +69,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
             <?= $form->field($model, 'code_of_conduct')->textarea(['rows' => 6]) ?>
         </div>
     </div> -->
-    <div class="row">
+    <div class="row" style="display:none;">
         <div class="form-group col-xs-12 col-sm-12 col-md-6 col-lg-6">
             <?= $form->field($model, 'sps_flooring_title')->textInput() ?>
         </div>
@@ -82,7 +77,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
             <?= $form->field($model, 'sps_flooring_sub_title')->textInput() ?>
         </div>
     </div>
-    <div class="row">
+    <div class="row" style="display:none;">
         <div class="form-group col-xs-12 col-sm-12 col-md-6 col-lg-6">
             <?= $form->field($model, 'weekly_bestsellers_title')->textInput() ?>
         </div>
@@ -90,7 +85,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
             <?= $form->field($model, 'weekly_bestsellers_sub_title')->textInput() ?>
         </div>
     </div>
-    <div class="row">
+    <div class="row" style="display:none;">
         <div class="form-group col-xs-12 col-sm-12 col-md-6 col-lg-6">
             <?= $form->field($model, 'clients_say_title')->textInput() ?>
         </div>
@@ -110,11 +105,11 @@ use wbraganca\dynamicform\DynamicFormWidget;
         <div class="form-group col-xs-12 col-sm-12 col-md-6 col-lg-6">
             <?= $form->field($model, 'twitter')->textInput() ?>
         </div>
-        <div class="form-group col-xs-12 col-sm-12 col-md-6 col-lg-6">
+        <div class="form-group col-xs-12 col-sm-12 col-md-6 col-lg-6" style="display:none;">
             <?= $form->field($model, 'youtube')->textInput() ?>
         </div>
     </div>
-    <div class="row">
+    <div class="row" style="display:none;">
         <div class="form-group col-xs-12 col-sm-12 col-md-6 col-lg-6">
             <?= $form->field($model, 'tiktok')->textInput() ?>
         </div>
@@ -132,7 +127,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
     </div>
 
     <div class="row">
-        <div class="form-group col-xs-12 col-sm-12 col-md-6 col-lg-6">
+        <div class="form-group col-xs-12 col-sm-12 col-md-6 col-lg-6" style="display:none;">
             <?= $form->field($model, 'contact_no')->textInput() ?>
         </div>
         <div class="form-group col-xs-12 col-sm-12 col-md-6 col-lg-6">
@@ -147,7 +142,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
             <?= $form->field($model, 'map_url')->textInput() ?>
         </div>
     </div>
-    <div class="row">
+    <div class="row" style="display:none;">
         <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
             <?= $form->field($model, 'tax')->textInput() ?>
         </div>
@@ -156,7 +151,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
         </div>
 
     </div>
-    <div class="row">
+    <div class="row" style="display:none;">
         <div class="form-group col-xs-12 col-sm-12 col-md-4 col-lg-4">
             <?= $form->field($model, 'latitude')->textInput() ?>
         </div>
@@ -168,7 +163,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
         </div>
     </div>
 
-    <div class="row">
+    <div class="row" style="display:none;">
         <div class="form-group col-xs-12 col-sm-12 col-md-6 col-lg-6">
             <?= $form->field($model, 'agree_delivery')->textInput() ?>
         </div>
@@ -195,7 +190,7 @@ use wbraganca\dynamicform\DynamicFormWidget;
             <?= $form->field($model, 'meta_description')->textarea(['rows' => 3]) ?>
         </div>
     </div>
-    <div class="row">
+    <div class="row" style="display:none;">
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
             <?= $form->field($model, 'need_to_display_roomvo')->radioList([
                 1 => 'Yes',
@@ -292,71 +287,73 @@ use wbraganca\dynamicform\DynamicFormWidget;
     <?php DynamicFormWidget::end(); ?>
     <hr>
 
-    <hr>
-    <h3 class="seotitle">Advertisement Home</h3>
-    <?php DynamicFormWidget::begin([
-        'widgetContainer' => 'dynamicform_wrapper',
-        'widgetBody' => '.container-items',
-        'widgetItem' => '.house-item',
-        'limit' => 2,
-        'min' => 0,
-        'insertButton' => '.add-house',
-        'deleteButton' => '.remove-house',
-        'model' => $advertisementhome[0],
-        'formId' => 'dynamic-form',
-        'formFields' => [
-            'image'
-        ],
-    ]); ?>
+    <div style="display:none;">
+        <hr>
+        <h3 class="seotitle">Advertisement Home</h3>
+        <?php DynamicFormWidget::begin([
+            'widgetContainer' => 'dynamicform_wrapper',
+            'widgetBody' => '.container-items',
+            'widgetItem' => '.house-item',
+            'limit' => 2,
+            'min' => 0,
+            'insertButton' => '.add-house',
+            'deleteButton' => '.remove-house',
+            'model' => $advertisementhome[0],
+            'formId' => 'dynamic-form',
+            'formFields' => [
+                'image'
+            ],
+        ]); ?>
 
-    <table class="table table-striped " style="overflow: auto;white-space: nowrap;">
-        <tbody class="container-items">
+        <table class="table table-striped " style="overflow: auto;white-space: nowrap;">
+            <tbody class="container-items">
 
-            <?php foreach ($advertisementhome as $indexadvertisementhome => $modeladvertisementhome) : ?>
+                <?php foreach ($advertisementhome as $indexadvertisementhome => $modeladvertisementhome) : ?>
 
-                <tr class="house-item">
+                    <tr class="house-item">
 
-                    <td class="vcenter">
+                        <td class="vcenter">
 
-                        <?php
-                        if (!$modeladvertisementhome->isNewRecord) {
-                            echo Html::activeHiddenInput($modeladvertisementhome, "[{$indexadvertisementhome}]advertisement_id");
-                        }
-                        ?>
+                            <?php
+                            if (!$modeladvertisementhome->isNewRecord) {
+                                echo Html::activeHiddenInput($modeladvertisementhome, "[{$indexadvertisementhome}]advertisement_id");
+                            }
+                            ?>
 
 
-                        <div class="row">
-                            <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                                <?= $form->field($modeladvertisementhome, "[{$indexadvertisementhome}]image")
-                                    ->fileInput([
-                                        'name' => "AdvertisementHome[{$indexadvertisementhome}][image]",
-                                        'class' => 'form-control file-upload',
-                                        'onchange' => 'readURL(this)'
-                                    ]) ?>
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+                                    <?= $form->field($modeladvertisementhome, "[{$indexadvertisementhome}]image")
+                                        ->fileInput([
+                                            'name' => "AdvertisementHome[{$indexadvertisementhome}][image]",
+                                            'class' => 'form-control file-upload',
+                                            'onchange' => 'readURL(this)'
+                                        ]) ?>
 
-                                <div class="mt-2">
-                                    <img
-                                        class="preview-image img-thumbnail <?= $modeladvertisementhome->isNewRecord ? 'hidden' : '' ?>"
-                                        src="<?= !$modeladvertisementhome->isNewRecord
-                                                    ? Yii::$app->params['ImagePath'] . $modeladvertisementhome->image
-                                                    : '' ?>"
-                                        style="height:95px;width:95px;object-fit:cover;" />
+                                    <div class="mt-2">
+                                        <img
+                                            class="preview-image img-thumbnail <?= $modeladvertisementhome->isNewRecord ? 'hidden' : '' ?>"
+                                            src="<?= !$modeladvertisementhome->isNewRecord
+                                                        ? Yii::$app->params['ImagePath'] . $modeladvertisementhome->image
+                                                        : '' ?>"
+                                            style="height:95px;width:95px;object-fit:cover;" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </td>
-                    <td class="text-center vcenter">
-                        <button type="button" class="remove-house btn btn-sm btn-light-danger"><span class="fa fa-minus"></span></button>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-        <th class="text-end">
-            <button type="button" class="add-house btn btn-sm btn-light-success"><span class="fa fa-plus"></span> Add New Images</button>
-        </th>
-    </table>
-    <?php DynamicFormWidget::end(); ?>
-    <hr>
+                        </td>
+                        <td class="text-center vcenter">
+                            <button type="button" class="remove-house btn btn-sm btn-light-danger"><span class="fa fa-minus"></span></button>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+            <th class="text-end">
+                <button type="button" class="add-house btn btn-sm btn-light-success"><span class="fa fa-plus"></span> Add New Images</button>
+            </th>
+        </table>
+        <?php DynamicFormWidget::end(); ?>
+        <hr>
+    </div>
 
     <div class="form-group custom-save-button">
         <?= Html::submitButton(Yii::t('app', 'Save'), ['class' => 'btn btn-light-success']) ?>
@@ -390,10 +387,6 @@ use wbraganca\dynamicform\DynamicFormWidget;
 </script>
 <script>
     $('#generalsetting-terms_conditions').summernote({
-        <?= Yii::$app->params['summernote'] ?>,
-    });
-
-    $('#generalsetting-terms_conditions_trade_pro').summernote({
         <?= Yii::$app->params['summernote'] ?>,
     });
 
