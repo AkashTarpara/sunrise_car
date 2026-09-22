@@ -221,71 +221,73 @@ use wbraganca\dynamicform\DynamicFormWidget;
         </div>
     </div> -->
 
-    <hr>
-    <h3 class="seotitle">Advertisement</h3>
-    <?php DynamicFormWidget::begin([
-        'widgetContainer' => 'dynamicform_wrapper2',
-        'widgetBody' => '.container-items2',
-        'widgetItem' => '.house-item2',
-        'limit' => 2,
-        'min' => 0,
-        'insertButton' => '.add-house2',
-        'deleteButton' => '.remove-house2',
-        'model' => $advertisement[0],
-        'formId' => 'dynamic-form',
-        'formFields' => [
-            'image'
-        ],
-    ]); ?>
+    <div style="display:none;">
+        <hr>
+        <h3 class="seotitle">Advertisement</h3>
+        <?php DynamicFormWidget::begin([
+            'widgetContainer' => 'dynamicform_wrapper2',
+            'widgetBody' => '.container-items2',
+            'widgetItem' => '.house-item2',
+            'limit' => 2,
+            'min' => 0,
+            'insertButton' => '.add-house2',
+            'deleteButton' => '.remove-house2',
+            'model' => $advertisement[0],
+            'formId' => 'dynamic-form',
+            'formFields' => [
+                'image'
+            ],
+        ]); ?>
 
-    <table class="table table-striped " style="overflow: auto;white-space: nowrap;">
-        <tbody class="container-items2">
+        <table class="table table-striped " style="overflow: auto;white-space: nowrap;">
+            <tbody class="container-items2">
 
-            <?php foreach ($advertisement as $indexadvertisement => $modeladvertisement) : ?>
+                <?php foreach ($advertisement as $indexadvertisement => $modeladvertisement) : ?>
 
-                <tr class="house-item2">
+                    <tr class="house-item2">
 
-                    <td class="vcenter">
+                        <td class="vcenter">
 
-                        <?php
-                        if (!$modeladvertisement->isNewRecord) {
-                            echo Html::activeHiddenInput($modeladvertisement, "[{$indexadvertisement}]advertisement_id");
-                        }
-                        ?>
+                            <?php
+                            if (!$modeladvertisement->isNewRecord) {
+                                echo Html::activeHiddenInput($modeladvertisement, "[{$indexadvertisement}]advertisement_id");
+                            }
+                            ?>
 
 
-                        <div class="row">
-                            <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                                <?= $form->field($modeladvertisement, "[{$indexadvertisement}]image")
-                                    ->fileInput([
-                                        'name' => "AdvertisementProduct[{$indexadvertisement}][image]",
-                                        'class' => 'form-control file-upload',
-                                        'onchange' => 'readURL(this)'
-                                    ]) ?>
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+                                    <?= $form->field($modeladvertisement, "[{$indexadvertisement}]image")
+                                        ->fileInput([
+                                            'name' => "AdvertisementProduct[{$indexadvertisement}][image]",
+                                            'class' => 'form-control file-upload',
+                                            'onchange' => 'readURL(this)'
+                                        ]) ?>
 
-                                <div class="mt-2">
-                                    <img
-                                        class="preview-image img-thumbnail <?= $modeladvertisement->isNewRecord ? 'hidden' : '' ?>"
-                                        src="<?= !$modeladvertisement->isNewRecord
-                                                    ? Yii::$app->params['ImagePath'] . $modeladvertisement->image
-                                                    : '' ?>"
-                                        style="height:95px;width:95px;object-fit:cover;" />
+                                    <div class="mt-2">
+                                        <img
+                                            class="preview-image img-thumbnail <?= $modeladvertisement->isNewRecord ? 'hidden' : '' ?>"
+                                            src="<?= !$modeladvertisement->isNewRecord
+                                                        ? Yii::$app->params['ImagePath'] . $modeladvertisement->image
+                                                        : '' ?>"
+                                            style="height:95px;width:95px;object-fit:cover;" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </td>
-                    <td class="text-center vcenter">
-                        <button type="button" class="remove-house2 btn btn-sm btn-light-danger"><span class="fa fa-minus"></span></button>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-        <th class="text-end">
-            <button type="button" class="add-house2 btn btn-sm btn-light-success"><span class="fa fa-plus"></span> Add New Images</button>
-        </th>
-    </table>
-    <?php DynamicFormWidget::end(); ?>
-    <hr>
+                        </td>
+                        <td class="text-center vcenter">
+                            <button type="button" class="remove-house2 btn btn-sm btn-light-danger"><span class="fa fa-minus"></span></button>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+            <th class="text-end">
+                <button type="button" class="add-house2 btn btn-sm btn-light-success"><span class="fa fa-plus"></span> Add New Images</button>
+            </th>
+        </table>
+        <?php DynamicFormWidget::end(); ?>
+        <hr>
+    </div>
 
     <div style="display:none;">
         <hr>
