@@ -102,9 +102,9 @@ class GeneralsettingController extends Controller
      * @return mixed
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionUpdate()
+    public function actionUpdate($id = 1)
     {
-        $model = $this->findModel(1);
+        $model = $this->findModel($id);
         $advertisement = Advertisement::find()->andWhere(["type" => "product"])->all();
         $advertisementhome = Advertisement::find()->andWhere(["type" => "homepage"])->all();
 
@@ -217,10 +217,7 @@ class GeneralsettingController extends Controller
                 }
 
                 Yii::$app->session->setFlash('success', "Updated successfully.");
-                // return $this->render('update', [
-                //     'model' => $model,
-                // ]);
-                return $this->redirect('update');
+                return $this->redirect(['update', 'id' => $model->setting_id]);
             }
         }
         return $this->render('update', [
