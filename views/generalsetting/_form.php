@@ -13,7 +13,10 @@ use wbraganca\dynamicform\DynamicFormWidget;
 
 <div class="generalsetting-form">
 
-    <?php $form = ActiveForm::begin(['id' => 'dynamic-form']); ?>
+    <?php $form = ActiveForm::begin([
+        'id' => 'dynamic-form',
+        'action' => ['generalsetting/update', 'id' => $model->setting_id],
+    ]); ?>
     <div class="row">
         <div class="form-group col-xs-12 col-sm-12 col-md-12 col-lg-12">
             <?= $form->field($model, 'terms_conditions')->textarea(['rows' => 6]) ?>
