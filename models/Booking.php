@@ -52,7 +52,7 @@ class Booking extends \yii\db\ActiveRecord
 
     public function beforeValidate()
     {
-        if ($this->isNewRecord && empty($this->booking_number)) {
+        if (static::class === self::class && $this->isNewRecord && empty($this->booking_number)) {
             $this->booking_number = 'SUN-' . date('ymdHis') . '-' . strtoupper(substr(uniqid(), -4));
         }
 

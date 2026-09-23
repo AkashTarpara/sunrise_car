@@ -20,6 +20,11 @@ class BookingSearch extends Booking
         return Model::scenarios();
     }
 
+    public function beforeValidate()
+    {
+        return true;
+    }
+
     public function search($params)
     {
         $query = Booking::find()
