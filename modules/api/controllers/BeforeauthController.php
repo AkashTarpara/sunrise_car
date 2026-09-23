@@ -23,6 +23,7 @@ use app\models\Advertisement;
 use app\models\Tradepropartner;
 use app\models\Fleet;
 use app\models\Booking;
+use app\components\ServiceAreaHelper;
 
 use app\models\Importcsv;
 use Aws\S3\S3Client;
@@ -85,6 +86,27 @@ class BeforeauthController extends Controller
     $fleet = Fleet::find()->where(['id' => $fleetId, 'status' => 'Active', 'deleted_at' => null])->one();
     if (!$fleet) {
       Yii::$app->MyFunctions->JsonPrint(['status' => 0, 'message' => 'Selected vehicle is not available'], 404);
+    }
+
+    // Check vehicle availability for the requested pickup date
+    if (!$fleet->isAvailableForDate($pickupDate)) {
+      Yii::$app->MyFunctions->JsonPrint([
+        'status'  => 0,
+        'message' => 'This vehicle is already booked or unavailable for ' . $pickupDate . '. Please choose a different date or vehicle.',
+      ], 409);
+    }
+
+    // Option B: Validate that BOTH pickup and dropoff locations are inside our allowed service areas
+    $pickupLocation = $ride['pickup'] ?? ($payload['pickup'] ?? null);
+    $dropoffLocation = $ride['dropoff'] ?? ($payload['dropoff'] ?? null);
+
+    $areaValidation = ServiceAreaHelper::validateTrip($pickupLocation, $dropoffLocation);
+    if (!$areaValidation['valid']) {
+      Yii::$app->MyFunctions->JsonPrint([
+        'status'  => 0,
+        'message' => $areaValidation['message'],
+        'data'    => $areaValidation['data'] ?? null,
+      ], 422);
     }
 
     $total = round((float) $fleet->base_price, 2);
@@ -374,26 +396,97 @@ class BeforeauthController extends Controller
 
   public function actionGetfleetlist()
   {
+    // ── Input params ──────────────────────────────────────────────────────────
+    $type = trim((string) Yii::$app->request->get('type', Yii::$app->request->post('type')));
+
+    // Date param (YYYY-MM-DD) — for availability filtering
+    $dateRaw   = trim((string) Yii::$app->request->get('date', Yii::$app->request->post('date')));
+    $checkDate = (!empty($dateRaw) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateRaw)) ? $dateRaw : null;
+
+    // Miles param — to calculate ride charge
+    $milesRaw = Yii::$app->request->get('miles', Yii::$app->request->post('miles'));
+    $miles    = (is_numeric($milesRaw) && (float) $milesRaw > 0) ? round((float) $milesRaw, 2) : null;
+
+    // Passengers param — return only fleets with capacity >= this number
+    $passengersRaw = Yii::$app->request->get('passengers', Yii::$app->request->post('passengers'));
+    $minPassengers = (is_numeric($passengersRaw) && (int) $passengersRaw > 0) ? (int) $passengersRaw : null;
+
+    // ── Build fleet query ─────────────────────────────────────────────────────
     $query = Fleet::find()
       ->where(['status' => 'Active', 'deleted_at' => null])
       ->with('fleetImages')
       ->orderBy(['id' => SORT_DESC]);
 
-    $type = Yii::$app->request->get('type', Yii::$app->request->post('type'));
     if (!empty($type)) {
       $query->andWhere(['type' => $type]);
     }
 
-    $fleets = $query->all();
+    // ── Process each fleet ────────────────────────────────────────────────────
     $data = [];
-    foreach ($fleets as $key => $fleet) {
-      $data[$key] = Yii::$app->MyFunctions->getFleetObject($fleet);
+    foreach ($query->all() as $fleet) {
+
+      // ── Passenger capacity filter ─────────────────────────────────────────
+      // passenger is stored as string — cast to int for comparison
+      if ($minPassengers !== null) {
+        $fleetCapacity = (int) $fleet->passenger;
+        if ($fleetCapacity < $minPassengers) {
+          continue; // skip — not enough seats
+        }
+      }
+
+      // ── Availability check ────────────────────────────────────────────────
+      $isAvailable = ($checkDate !== null)
+        ? $fleet->isAvailableForDate($checkDate)
+        : (bool) $fleet->is_available;
+
+      // If a date was supplied, skip unavailable vehicles entirely
+      if ($checkDate !== null && !$isAvailable) {
+        continue;
+      }
+
+      // ── Pricing calculation ───────────────────────────────────────────────
+      // km_per_hour_price is treated as price-per-mile
+      $pricePerMile = round((float) $fleet->km_per_hour_price, 4);
+      $basePrice    = round((float) $fleet->base_price, 2);
+
+      if ($miles !== null) {
+        $mileCharge  = round($miles * $pricePerMile, 2);
+        // Use whichever is higher: base_price or miles * price_per_mile
+        $totalCharge = max($basePrice, $mileCharge);
+        $chargeBreakdown = [
+          'miles'          => $miles,
+          'price_per_mile' => $pricePerMile,
+          'miles_charge'   => $mileCharge,
+          'base_price'     => $basePrice,
+          'total_charge'   => $totalCharge,
+          'charge_basis'   => ($basePrice >= $mileCharge) ? 'base_price' : 'miles',
+        ];
+      } else {
+        $totalCharge     = $basePrice;
+        $chargeBreakdown = [
+          'miles'          => null,
+          'price_per_mile' => $pricePerMile,
+          'miles_charge'   => null,
+          'base_price'     => $basePrice,
+          'total_charge'   => $totalCharge,
+          'charge_basis'   => 'base_price',
+        ];
+      }
+
+      // ── Build response item ───────────────────────────────────────────────
+      $item                    = Yii::$app->MyFunctions->getFleetObject($fleet);
+      $item['is_available']    = (int) $isAvailable;
+      $item['available_after'] = $fleet->available_after;
+      $item['charge']          = $totalCharge;
+      $item['charge_breakdown']= $chargeBreakdown;
+
+      $data[] = $item;
     }
 
     Yii::$app->MyFunctions->JsonPrint([
-      'status' => 1,
+      'status'  => 1,
       'message' => Yii::t('app', 'List found'),
-      'data' => $data,
+      'data'    => array_values($data),
     ]);
   }
 
@@ -508,6 +601,64 @@ class BeforeauthController extends Controller
       'http_status' => $httpStatusCode,
       'data' => $data,
     ], ($httpStatusCode >= 200 && $httpStatusCode < 300) ? 200 : 502);
+  }
+
+  /**
+   * Validate pickup and/or dropoff locations against allowed service areas (Option B: Strict).
+   * Accepts JSON body or GET/POST params:
+   *  - pickup & dropoff (validates both under Option B)
+   *  - OR location (validates single location)
+   */
+  public function actionCheckservicearea()
+  {
+    $payload = Yii::$app->request->getBodyParams();
+    if (empty($payload)) {
+      $rawBody = file_get_contents('php://input');
+      $decoded = json_decode($rawBody, true);
+      $payload = is_array($decoded) ? $decoded : $_REQUEST;
+    }
+
+    $pickup = $payload['pickup'] ?? ($payload['ride']['pickup'] ?? Yii::$app->request->get('pickup'));
+    $dropoff = $payload['dropoff'] ?? ($payload['ride']['dropoff'] ?? Yii::$app->request->get('dropoff'));
+    $location = $payload['location'] ?? Yii::$app->request->get('location');
+
+    // Both pickup and dropoff provided -> validate full trip (Option B Strict)
+    if (!empty($pickup) && !empty($dropoff)) {
+      $result = ServiceAreaHelper::validateTrip($pickup, $dropoff);
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => $result['valid'] ? 1 : 0,
+        'message' => $result['message'],
+        'data' => $result['data'] ?? null,
+      ], $result['valid'] ? 200 : 422);
+    }
+
+    // Single location validation
+    $singleTarget = !empty($location) ? $location : (!empty($pickup) ? $pickup : $dropoff);
+    if (!empty($singleTarget)) {
+      $result = ServiceAreaHelper::validateLocation($singleTarget);
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => $result['valid'] ? 1 : 0,
+        'message' => $result['message'],
+        'data' => $result,
+      ], $result['valid'] ? 200 : 422);
+    }
+
+    Yii::$app->MyFunctions->JsonPrint([
+      'status' => 0,
+      'message' => Yii::t('app', 'pickup and dropoff (or location) parameters are required'),
+    ], 400);
+  }
+
+  /**
+   * Return the list of all supported service zones, cities, and airports.
+   */
+  public function actionGetserviceareas()
+  {
+    Yii::$app->MyFunctions->JsonPrint([
+      'status' => 1,
+      'message' => Yii::t('app', 'Service areas retrieved successfully'),
+      'data' => ServiceAreaHelper::getAllowedAreas(),
+    ]);
   }
 
   public function actionGetfleetdetail()

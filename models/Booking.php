@@ -74,4 +74,20 @@ class Booking extends \yii\db\ActiveRecord
 
         return true;
     }
+    public function afterSave($insert, $changedAttributes)
+    {
+        parent::afterSave($insert, $changedAttributes);
+
+        // Trigger fleet availability recalculation whenever booking_status or payment_status changes
+        $statusChanged = isset($changedAttributes['booking_status']) || isset($changedAttributes['payment_status']);
+        $isConfirmed   = ($this->booking_status === 'confirmed' && $this->payment_status === 'paid');
+        $isCancelled   = ($this->booking_status === 'cancelled');
+
+        if ($statusChanged && ($isConfirmed || $isCancelled)) {
+            $fleet = Fleet::findOne(['id' => $this->fleet_id, 'deleted_at' => null]);
+            if ($fleet) {
+                $fleet->recalculateAvailableAfter();
+            }
+        }
+    }
 }

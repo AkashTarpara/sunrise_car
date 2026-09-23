@@ -27,6 +27,14 @@ $this->params['breadcrumbs'][] = $this->title;
             <p><strong>Km Per Hour Price:</strong> <?= Html::encode($model->km_per_hour_price) ?></p>
             <p><strong>Type:</strong> <?= Html::encode($model->type) ?></p>
             <p><strong>Status:</strong> <?= Html::encode($model->status) ?></p>
+            <p><strong>Is Available:</strong>
+                <?= $model->is_available
+                    ? '<span class="badge badge-success">Yes</span>'
+                    : '<span class="badge badge-danger">No (manually disabled)</span>' ?>
+            </p>
+            <p><strong>Available After (auto from bookings):</strong>
+                <?= !empty($model->available_after) ? Html::encode($model->available_after) : '<em class="text-muted">No active bookings — available now</em>' ?>
+            </p>
             <p><?= nl2br(Html::encode($model->description)) ?></p>
             <?= Html::a('Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
             <?= Html::a('Delete', ['delete', 'id' => $model->id], [

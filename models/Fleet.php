@@ -42,26 +42,33 @@ class Fleet extends \yii\db\ActiveRecord
             [['base_price'], 'default', 'value' => 100],
             [['km_per_hour_price'], 'default', 'value' => 24],
             [['images'], 'file', 'extensions' => ['png', 'jpg', 'jpeg', 'webp', 'gif'], 'maxFiles' => 20],
+            // Availability
+            [['is_available'], 'boolean'],
+            [['is_available'], 'default', 'value' => 1],
+            [['available_after'], 'date', 'format' => 'php:Y-m-d'],
+            [['available_after'], 'safe'],
         ];
     }
 
     public function attributeLabels()
     {
         return [
-            'id' => Yii::t('app', 'ID'),
-            'label' => Yii::t('app', 'Label'),
-            'name' => Yii::t('app', 'Name'),
-            'passenger' => Yii::t('app', 'Passenger'),
-            'laggage' => Yii::t('app', 'Laggage'),
-            'base_price' => Yii::t('app', 'Base Price'),
-            'km_per_hour_price' => Yii::t('app', 'Km Per Hour Price'),
-            'description' => Yii::t('app', 'Description'),
-            'status' => Yii::t('app', 'Status'),
-            'type' => Yii::t('app', 'Type'),
-            'images' => Yii::t('app', 'Images'),
-            'created_at' => Yii::t('app', 'Created At'),
-            'updated_at' => Yii::t('app', 'Updated At'),
-            'deleted_at' => Yii::t('app', 'Deleted At'),
+            'id'               => Yii::t('app', 'ID'),
+            'label'            => Yii::t('app', 'Label'),
+            'name'             => Yii::t('app', 'Name'),
+            'passenger'        => Yii::t('app', 'Passenger'),
+            'laggage'          => Yii::t('app', 'Laggage'),
+            'base_price'       => Yii::t('app', 'Base Price'),
+            'km_per_hour_price'=> Yii::t('app', 'Km Per Hour Price'),
+            'description'      => Yii::t('app', 'Description'),
+            'status'           => Yii::t('app', 'Status'),
+            'type'             => Yii::t('app', 'Type'),
+            'images'           => Yii::t('app', 'Images'),
+            'is_available'     => Yii::t('app', 'Is Available'),
+            'available_after'  => Yii::t('app', 'Available After'),
+            'created_at'       => Yii::t('app', 'Created At'),
+            'updated_at'       => Yii::t('app', 'Updated At'),
+            'deleted_at'       => Yii::t('app', 'Deleted At'),
         ];
     }
 
@@ -130,5 +137,66 @@ class Fleet extends \yii\db\ActiveRecord
         }
 
         return true;
+    }
+
+    /**
+     * Recalculates available_after based on the latest confirmed+paid booking
+     * for this fleet. Called automatically after a booking is confirmed/cancelled.
+     *
+     * Logic:
+     *  - Find the latest pickup_date among all confirmed (booking_status=confirmed,
+     *    payment_status=paid) bookings that have not been deleted.
+     *  - If found, set available_after = that pickup_date.
+     *  - If no active confirmed bookings exist, clear available_after (null).
+     */
+    public function recalculateAvailableAfter()
+    {
+        $latestDate = (new \yii\db\Query())
+            ->select(['MAX(pickup_date) AS max_date'])
+            ->from('booking')
+            ->where([
+                'fleet_id'       => $this->id,
+                'booking_status' => 'confirmed',
+                'payment_status' => 'paid',
+                'deleted_at'     => null,
+            ])
+            ->scalar();
+
+        $this->available_after = !empty($latestDate) ? $latestDate : null;
+        $this->save(false, ['available_after', 'updated_at']);
+    }
+
+    /**
+     * Check whether this fleet is available for a given date (Y-m-d).
+     * Checks:
+     *  1. Admin manual toggle (is_available = 1)
+     *  2. available_after is null OR the requested date is AFTER available_after
+     *  3. No active confirmed booking exists for that exact date
+     */
+    public function isAvailableForDate($date)
+    {
+        // 1. Admin has manually disabled this vehicle
+        if (!$this->is_available) {
+            return false;
+        }
+
+        // 2. Fleet is still within its last booked date window
+        if (!empty($this->available_after) && $date <= $this->available_after) {
+            return false;
+        }
+
+        // 3. Live check: does a confirmed booking already exist for this exact date?
+        $exists = (new \yii\db\Query())
+            ->from('booking')
+            ->where([
+                'fleet_id'       => $this->id,
+                'pickup_date'    => $date,
+                'booking_status' => 'confirmed',
+                'payment_status' => 'paid',
+                'deleted_at'     => null,
+            ])
+            ->exists();
+
+        return !$exists;
     }
 }

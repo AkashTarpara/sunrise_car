@@ -24,6 +24,15 @@ $form = ActiveForm::begin(['options' => ['enctype' => 'multipart/form-data']]);
     <div class="col-md-6"><?= $form->field($model, 'km_per_hour_price')->textInput(['type' => 'number', 'min' => 0, 'step' => '0.01']) ?></div>
 </div>
 
+<div class="row">
+    <div class="col-md-6">
+        <?= $form->field($model, 'is_available')->dropDownList([1 => 'Yes — Available', 0 => 'No — Unavailable (maintenance etc.)'])->hint('Manually mark this vehicle as available or unavailable regardless of bookings.') ?>
+    </div>
+    <div class="col-md-6">
+        <?= $form->field($model, 'available_after')->textInput(['type' => 'date'])->hint('Leave blank to let the system manage this automatically based on bookings. Set a date to block this vehicle until that date.') ?>
+    </div>
+</div>
+
 <?= $form->field($model, 'description')->textarea(['rows' => 5]) ?>
 
 <?= $form->field($model, 'images[]')->fileInput(['multiple' => true, 'accept' => 'image/*']) ?>

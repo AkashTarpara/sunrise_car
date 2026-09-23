@@ -29,11 +29,19 @@ $this->params['breadcrumbs'][] = $this->title;
                         'label',
                         'name',
                         'passenger',
-                        'laggage',
-                        'base_price',
-                        'km_per_hour_price',
                         'type',
                         'status',
+                        [
+                            'attribute' => 'is_available',
+                            'label'     => 'Available',
+                            'format'    => 'raw',
+                            'value'     => function ($model) {
+                                return $model->is_available
+                                    ? '<span class="badge badge-success">Yes</span>'
+                                    : '<span class="badge badge-danger">No</span>';
+                            },
+                        ],
+                        'available_after',
                         'created_at',
                         [
                             'class' => 'yii\grid\ActionColumn',

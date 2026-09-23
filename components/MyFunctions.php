@@ -1576,19 +1576,21 @@ class MyFunctions extends Component
     }
 
     return [
-      'id' => $model->id,
-      'label' => $model->label,
-      'name' => $model->name,
-      'passenger' => $model->passenger,
-      'laggage' => $model->laggage,
-      'base_price' => $model->base_price,
+      'id'                => $model->id,
+      'label'             => $model->label,
+      'name'              => $model->name,
+      'passenger'         => $model->passenger,
+      'laggage'           => $model->laggage,
+      'base_price'        => $model->base_price,
       'km_per_hour_price' => $model->km_per_hour_price,
-      'description' => $model->description,
-      'status' => $model->status,
-      'type' => $model->type,
-      'images' => $images,
-      'created_at' => $model->created_at,
-      'updated_at' => $model->updated_at,
+      'description'       => $model->description,
+      'status'            => $model->status,
+      'type'              => $model->type,
+      'is_available'      => (int) $model->is_available,
+      'available_after'   => $model->available_after,
+      'images'            => $images,
+      'created_at'        => $model->created_at,
+      'updated_at'        => $model->updated_at,
     ];
   }
 
