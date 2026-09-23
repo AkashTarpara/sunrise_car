@@ -570,8 +570,6 @@ class BeforeauthController extends Controller
     if ($model->validate() && $model->save()) {
       try {
         $toEmail = !empty(Yii::$app->params['contactEmail']) ? Yii::$app->params['contactEmail'] : 'info@sunriseblackcar.com';
-        $ccRaw = !empty(Yii::$app->params['contactCcEmail']) ? Yii::$app->params['contactCcEmail'] : 'akashtarapara222@gmail.com, kevalpatel571@gmail.com';
-        $ccEmails = $this->getEmailList($ccRaw);
         $fromEmail = !empty(Yii::$app->params['senderEmail']) ? Yii::$app->params['senderEmail'] : (!empty(Yii::$app->params['supportEmail']) ? Yii::$app->params['supportEmail'] : $toEmail);
         $senderName = !empty(Yii::$app->params['senderName']) ? Yii::$app->params['senderName'] : 'Sunrise Black Car';
 
@@ -588,17 +586,12 @@ class BeforeauthController extends Controller
           . "</table>"
           . "</div>";
 
-        $mail = Yii::$app->mailer->compose()
+        Yii::$app->mailer->compose()
           ->setFrom([$fromEmail => $senderName])
           ->setTo($toEmail)
           ->setSubject('New Contact Us Inquiry: ' . $subjectTitle)
-          ->setHtmlBody($htmlContent);
-
-        if (!empty($ccEmails)) {
-          $mail->setCc($ccEmails);
-        }
-
-        $mail->send();
+          ->setHtmlBody($htmlContent)
+          ->send();
       } catch (\Throwable $e) {
         Yii::error('Contact Us email sending error: ' . $e->getMessage(), 'contactus');
       }
