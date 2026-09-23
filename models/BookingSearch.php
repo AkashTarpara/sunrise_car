@@ -10,7 +10,7 @@ class BookingSearch extends Booking
     public function rules()
     {
         return [
-            [['id', 'fleet_id'], 'integer'],
+            [['fleet_id'], 'integer'],
             [['booking_number', 'pickup_date', 'payment_status', 'booking_status'], 'safe'],
         ];
     }

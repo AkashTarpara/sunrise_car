@@ -568,6 +568,41 @@ class BeforeauthController extends Controller
     ], '');
 
     if ($model->validate() && $model->save()) {
+      try {
+        $toEmail = !empty(Yii::$app->params['contactEmail']) ? Yii::$app->params['contactEmail'] : 'info@sunriseblackcar.com';
+        $ccRaw = !empty(Yii::$app->params['contactCcEmail']) ? Yii::$app->params['contactCcEmail'] : 'akashtarapara222@gmail.com, kevalpatel571@gmail.com';
+        $ccEmails = $this->getEmailList($ccRaw);
+        $fromEmail = !empty(Yii::$app->params['senderEmail']) ? Yii::$app->params['senderEmail'] : (!empty(Yii::$app->params['supportEmail']) ? Yii::$app->params['supportEmail'] : $toEmail);
+        $senderName = !empty(Yii::$app->params['senderName']) ? Yii::$app->params['senderName'] : 'Sunrise Black Car';
+
+        $subjectTitle = !empty($model->subject) ? $model->subject : 'General Inquiry';
+
+        $htmlContent = "<div style='font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6;'>"
+          . "<h2 style='color: #111;'>New Contact Us Submission</h2>"
+          . "<table style='width: 100%; max-width: 600px; border-collapse: collapse; margin-top: 15px;'>"
+          . "<tr><td style='padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd; width: 140px;'>Full Name:</td><td style='padding: 8px; border-bottom: 1px solid #ddd;'>" . htmlspecialchars($model->full_name) . "</td></tr>"
+          . "<tr><td style='padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd;'>Email:</td><td style='padding: 8px; border-bottom: 1px solid #ddd;'><a href='mailto:" . htmlspecialchars($model->email) . "'>" . htmlspecialchars($model->email) . "</a></td></tr>"
+          . "<tr><td style='padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd;'>Phone Number:</td><td style='padding: 8px; border-bottom: 1px solid #ddd;'>" . htmlspecialchars($model->phone_number) . "</td></tr>"
+          . "<tr><td style='padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd;'>Subject:</td><td style='padding: 8px; border-bottom: 1px solid #ddd;'>" . htmlspecialchars($model->subject) . "</td></tr>"
+          . "<tr><td style='padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd; vertical-align: top;'>Message:</td><td style='padding: 8px; border-bottom: 1px solid #ddd;'>" . nl2br(htmlspecialchars($model->message)) . "</td></tr>"
+          . "</table>"
+          . "</div>";
+
+        $mail = Yii::$app->mailer->compose()
+          ->setFrom([$fromEmail => $senderName])
+          ->setTo($toEmail)
+          ->setSubject('New Contact Us Inquiry: ' . $subjectTitle)
+          ->setHtmlBody($htmlContent);
+
+        if (!empty($ccEmails)) {
+          $mail->setCc($ccEmails);
+        }
+
+        $mail->send();
+      } catch (\Throwable $e) {
+        Yii::error('Contact Us email sending error: ' . $e->getMessage(), 'contactus');
+      }
+
       $message = Yii::t('app', 'Thanks for the message, one of our team will be in touch shortly');
       Yii::$app->MyFunctions->JsonPrint(array(
         'status' => 1,

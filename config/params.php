@@ -11,6 +11,7 @@ return [
     'senderName' => ($_ENV['SENDER_NAME'] ?: ''),
     'senderEmail' => ($_ENV['SENDER_EMAIL'] ?: ''),
     'contactEmail' => ($_ENV['CONTACT_EMAIL'] ?: ''),
+    'contactCcEmail' => ($_ENV['CONTACT_CC_EMAIL'] ?: ''),
     'applicationEmail' => (
         $_ENV['application_email']
         ?: ($_SERVER['application_email']
