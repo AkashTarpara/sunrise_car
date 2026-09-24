@@ -411,6 +411,35 @@ class BeforeauthController extends Controller
     $passengersRaw = Yii::$app->request->get('passengers', Yii::$app->request->post('passengers'));
     $minPassengers = (is_numeric($passengersRaw) && (int) $passengersRaw > 0) ? (int) $passengersRaw : null;
 
+    // Optional location / ZIP validation
+    $zip = trim((string) Yii::$app->request->get('zip', Yii::$app->request->post('zip', Yii::$app->request->get('postal_code', Yii::$app->request->post('postal_code')))));
+    $pickup = Yii::$app->request->get('pickup', Yii::$app->request->post('pickup', Yii::$app->request->get('pickup_zip', Yii::$app->request->post('pickup_zip'))));
+    $dropoff = Yii::$app->request->get('dropoff', Yii::$app->request->post('dropoff', Yii::$app->request->get('dropoff_zip', Yii::$app->request->post('dropoff_zip'))));
+    $location = Yii::$app->request->get('location', Yii::$app->request->post('location'));
+
+    if (!empty($pickup) && !empty($dropoff)) {
+      $tripCheck = ServiceAreaHelper::validateTrip($pickup, $dropoff);
+      if (!$tripCheck['valid']) {
+        Yii::$app->MyFunctions->JsonPrint([
+          'status'  => 0,
+          'message' => $tripCheck['message'],
+          'data'    => [],
+        ], 422);
+      }
+    } else {
+      $singleTarget = !empty($zip) ? $zip : (!empty($location) ? $location : (!empty($pickup) ? $pickup : $dropoff));
+      if (!empty($singleTarget)) {
+        $locCheck = ServiceAreaHelper::validateLocation($singleTarget);
+        if (!$locCheck['valid']) {
+          Yii::$app->MyFunctions->JsonPrint([
+            'status'  => 0,
+            'message' => $locCheck['message'],
+            'data'    => [],
+          ], 422);
+        }
+      }
+    }
+
     // ── Build fleet query ─────────────────────────────────────────────────────
     $query = Fleet::find()
       ->where(['status' => 'Active', 'deleted_at' => null])
@@ -618,9 +647,9 @@ class BeforeauthController extends Controller
       $payload = is_array($decoded) ? $decoded : $_REQUEST;
     }
 
-    $pickup = $payload['pickup'] ?? ($payload['ride']['pickup'] ?? Yii::$app->request->get('pickup'));
-    $dropoff = $payload['dropoff'] ?? ($payload['ride']['dropoff'] ?? Yii::$app->request->get('dropoff'));
-    $location = $payload['location'] ?? Yii::$app->request->get('location');
+    $pickup = $payload['pickup'] ?? ($payload['ride']['pickup'] ?? ($payload['pickup_zip'] ?? Yii::$app->request->get('pickup', Yii::$app->request->get('pickup_zip'))));
+    $dropoff = $payload['dropoff'] ?? ($payload['ride']['dropoff'] ?? ($payload['dropoff_zip'] ?? Yii::$app->request->get('dropoff', Yii::$app->request->get('dropoff_zip'))));
+    $location = $payload['location'] ?? ($payload['zip'] ?? ($payload['postal_code'] ?? Yii::$app->request->get('location', Yii::$app->request->get('zip', Yii::$app->request->get('postal_code')))));
 
     // Both pickup and dropoff provided -> validate full trip (Option B Strict)
     if (!empty($pickup) && !empty($dropoff)) {
@@ -1070,89 +1099,161 @@ class BeforeauthController extends Controller
   // 10
   public function actionUsersignup()
   {
+    $payload = Yii::$app->request->getBodyParams();
+    if (empty($payload)) {
+      $rawBody = file_get_contents('php://input');
+      $decoded = json_decode($rawBody, true);
+      $payload = is_array($decoded) ? $decoded : $_REQUEST;
+    } else {
+      $payload = array_merge($_REQUEST, $payload);
+    }
+
+    $data = isset($payload['Appuser']) ? $payload['Appuser'] : $payload;
+
+    // Handle phone number aliases (phone_number, phone_no, phone, mobile)
+    $phone = $data['phone_number'] ?? ($data['phone_no'] ?? ($data['phone'] ?? ($data['mobile'] ?? ($data['contact_number'] ?? ''))));
+
+    // Handle full name split if first_name is not provided separately
+    if (empty($data['first_name']) && !empty($data['name'])) {
+      $nameParts = explode(' ', trim($data['name']), 2);
+      $data['first_name'] = $nameParts[0];
+      if (empty($data['last_name']) && isset($nameParts[1])) {
+        $data['last_name'] = $nameParts[1];
+      }
+    }
+
     $model = new Appuser();
     $model->scenario = "usersignup";
-    $model->load($_REQUEST);
+    $model->load($data, '');
+
+    if (!empty($phone)) {
+      $model->phone_number = trim((string)$phone);
+    }
+
+    // Explicit check for phone number
+    if (empty($model->phone_number)) {
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => 0,
+        'message' => Yii::t('app', 'Phone number is required.'),
+      ], 400);
+    }
+
+    // Default device metadata for web / API clients if not supplied
+    if (empty($model->devices_type)) {
+      $model->devices_type = 'Web';
+    }
+    if (empty($model->devices_name)) {
+      $model->devices_name = $_SERVER['HTTP_USER_AGENT'] ?? 'Web Browser';
+    }
+    if (empty($model->devices_id)) {
+      $model->devices_id = 'web_' . md5(($model->email ?? '') . microtime());
+    }
+    if (empty($model->app_version)) {
+      $model->app_version = '1.0';
+    }
 
     $model->role = '3';
     $model->user_type = 'User';
     $model->signup_type = 'Normal';
-    //echo "<pre>";print_r($model);exit;
-    if ($model->validate() && $model->save()) {
 
-      $UserDevice = Yii::$app->MyFunctions->setDeviceinfo($model);
-      $data = Yii::$app->MyFunctions->getUserObject($model, $UserDevice);
+    if ($model->validate() && $model->save()) {
+      $userDevice = Yii::$app->MyFunctions->setDeviceinfo($model);
+      $userData = Yii::$app->MyFunctions->getUserObject($model, $userDevice);
+
+      try {
+        $model->sendWelcomeMail();
+      } catch (\Throwable $e) {
+        Yii::error('Welcome email sending error: ' . $e->getMessage(), 'welcome');
+      }
 
       $message = Yii::t('app', 'User Signup is successful.');
-
-      Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'message' => $message, 'data' => $data));
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => 1,
+        'message' => $message,
+        'data' => $userData,
+      ]);
     }
+
     Yii::$app->MyFunctions->getModelErrors($model, "Y");
   }
 
   // 11 
   public function actionLogin()
   {
+    $payload = Yii::$app->request->getBodyParams();
+    if (empty($payload)) {
+      $rawBody = file_get_contents('php://input');
+      $decoded = json_decode($rawBody, true);
+      $payload = is_array($decoded) ? $decoded : $_REQUEST;
+    } else {
+      $payload = array_merge($_REQUEST, $payload);
+    }
+
+    $data = isset($payload['Appuser']) ? $payload['Appuser'] : $payload;
+
+    // Apply web defaults if device fields are not supplied
+    if (empty($data['devices_type'])) {
+      $data['devices_type'] = 'Web';
+    }
+    if (empty($data['devices_name'])) {
+      $data['devices_name'] = $_SERVER['HTTP_USER_AGENT'] ?? 'Web Browser';
+    }
+    if (empty($data['devices_id'])) {
+      $data['devices_id'] = 'web_' . md5(($data['email'] ?? '') . microtime());
+    }
+    if (empty($data['app_version'])) {
+      $data['app_version'] = '1.0';
+    }
 
     $model = new Appuser();
-
     $model->scenario = "login";
-    //$load['Appuser']=$_REQUEST;
-    $model->load($_REQUEST);
+    $model->load($data, '');
 
-    if ($model->validate()) {
-
-      $Model = Appuser::find()
-        ->where(['email' => $model->email, "login_type" => "Normal", 'is_deleted' => "No"])
-        ->andWhere(['not in', 'role', ['1']])
-        ->one();
-
-
-      if (!$Model) {
-        Yii::$app->MyFunctions->JsonPrint(array('status' => 0, 'message' => Yii::t('app', 'Invalid email or password please try again')));
-      }
-
-      if (!empty($Model)) {
-        if (sha1($model->password) != $Model->password) {
-          Yii::$app->MyFunctions->JsonPrint(array('status' => 0, 'message' => Yii::t('app', 'Invalid email or password please try again')));
-        }
-      }
-
-      if ($Model && $Model->is_deleted == "Yes") {
-        Yii::$app->MyFunctions->JsonPrint(array('status' => 3, 'message' => Yii::t('app', "An account with this email address does not exist. Please sign up to create a new account.")));
-      }
-
-      if ($Model && $Model->status == "Inactive") {
-        Yii::$app->MyFunctions->JsonPrint(array('status' => 4, 'message' => Yii::t('app', "You account is inactive. Please contact admin for more information.")));
-      }
-
-
-      $Model->devices_type = $model->devices_type;
-      $Model->devices_token = $model->devices_token;
-      $Model->devices_name = $model->devices_name;
-      $Model->devices_id = $model->devices_id;
-      $Model->app_version = $model->app_version;
-      //echo "<pre>";print_r($model->devices_type);exit;
-      if ($Model->save()) {
-        //$Model->sendEmailverifycodeMail();
-        $UserDevice = Yii::$app->MyFunctions->setDeviceinfo($Model);
-        $data = Yii::$app->MyFunctions->getUserObject($Model, $UserDevice);
-        //$data['token']=$Model->email_verify_token;
-        $message = Yii::t('app', 'Login is successfully completed.');
-
-
-        Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'message' => $message, 'data' => $data));
-      }
-
-      Yii::$app->MyFunctions->getModelErrors($Model, "Y");
-    } else {
+    if (!$model->validate()) {
       Yii::$app->MyFunctions->getModelErrors($model, "Y");
     }
+
+    $cleanEmail = strtolower(trim((string)$model->email));
+    $user = Appuser::find()
+      ->where(['LOWER(email)' => $cleanEmail, 'login_type' => 'Normal', 'is_deleted' => 'No'])
+      ->andWhere(['not in', 'role', ['1']])
+      ->one();
+
+    if (!$user || sha1($model->password) !== $user->password) {
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => 0,
+        'message' => Yii::t('app', 'Invalid email or password please try again'),
+      ], 401);
+    }
+
+    if ($user->status === 'Inactive') {
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => 4,
+        'message' => Yii::t('app', 'Your account is inactive. Please contact admin for more information.'),
+      ], 403);
+    }
+
+    $user->devices_type = $model->devices_type;
+    $user->devices_token = $model->devices_token;
+    $user->devices_name = $model->devices_name;
+    $user->devices_id = $model->devices_id;
+    $user->app_version = $model->app_version;
+    $user->save(false);
+
+    $userDevice = Yii::$app->MyFunctions->setDeviceinfo($user);
+    $userData = Yii::$app->MyFunctions->getUserObject($user, $userDevice);
+
+    $message = Yii::t('app', 'Login is successfully completed.');
+    Yii::$app->MyFunctions->JsonPrint([
+      'status' => 1,
+      'message' => $message,
+      'data' => $userData,
+    ]);
   }
+
   //8
   public function actionGetaboutus()
   {
-
     $query = Aboutus::find()
       ->Where(['status' => 'Active'])
       ->one();
@@ -1167,30 +1268,98 @@ class BeforeauthController extends Controller
   // 9
   public function actionForgotpassword()
   {
+    $payload = Yii::$app->request->getBodyParams();
+    if (empty($payload)) {
+      $rawBody = file_get_contents('php://input');
+      $decoded = json_decode($rawBody, true);
+      $payload = is_array($decoded) ? $decoded : $_REQUEST;
+    } else {
+      $payload = array_merge($_REQUEST, $payload);
+    }
+
+    $data = isset($payload['Appuser']) ? $payload['Appuser'] : $payload;
+
     $model = new Appuser();
     $model->scenario = "forgotpassword";
-    $model->load($_REQUEST);
-    if ($model->validate()) {
-      $Model = Appuser::find()
-        ->where(['email' => $model->email, "login_type" => "Normal", 'role' => '3', 'user_type' => 'User', 'is_deleted' => "No"])
-        ->one();
-      if ($Model) {
-        if ($Model->status == "Inactive") {
-          Yii::$app->MyFunctions->JsonPrint(array('status' => 5, 'message' => Yii::t('app', "You are inactive by admin contact admin for more info")));
-        }
-        try {
-          $Model->sendPasswordResetLink();
-        } catch (\Exception $exc) {
-          Yii::$app->MyFunctions->JsonPrint(array('status' => 0, "message" => $exc->getMessage()));
-        }
+    $model->load($data, '');
 
-        Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'message' => Yii::t('app', 'Please check your email for further information.')));
-      } else {
-        Yii::$app->MyFunctions->JsonPrint(array('status' => 0, 'message' => Yii::t('app', 'You are not register with this email')));
-      }
-    } else {
+    if (!$model->validate()) {
       Yii::$app->MyFunctions->getModelErrors($model, "Y");
     }
+
+    $cleanEmail = strtolower(trim((string)$model->email));
+    $user = Appuser::find()
+      ->where(['LOWER(email)' => $cleanEmail, 'login_type' => 'Normal', 'is_deleted' => 'No'])
+      ->andWhere(['not in', 'role', ['1']])
+      ->one();
+
+    if (!$user) {
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => 0,
+        'message' => Yii::t('app', 'You are not registered with this email address.'),
+      ], 404);
+    }
+
+    if ($user->status === 'Inactive') {
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => 5,
+        'message' => Yii::t('app', 'Your account is inactive. Please contact admin for more information.'),
+      ], 403);
+    }
+
+    try {
+      $user->sendPasswordResetLink();
+    } catch (\Throwable $exc) {
+      Yii::error('Forgot password error: ' . $exc->getMessage(), 'forgotpassword');
+    }
+
+    Yii::$app->MyFunctions->JsonPrint([
+      'status' => 1,
+      'message' => Yii::t('app', 'Please check your email for password reset instructions.'),
+    ]);
+  }
+
+  // 10 - Reset Password API
+  public function actionResetpassword()
+  {
+    $payload = Yii::$app->request->getBodyParams();
+    if (empty($payload)) {
+      $rawBody = file_get_contents('php://input');
+      $decoded = json_decode($rawBody, true);
+      $payload = is_array($decoded) ? $decoded : $_REQUEST;
+    } else {
+      $payload = array_merge($_REQUEST, $payload);
+    }
+
+    $token = trim((string)($payload['token'] ?? ''));
+    $password = (string)($payload['password'] ?? '');
+
+    if (empty($token) || empty($password)) {
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => 0,
+        'message' => Yii::t('app', 'Token and new password are required.'),
+      ], 400);
+    }
+
+    $user = Appuser::find()
+      ->where(['password_reset_token' => $token, 'is_deleted' => 'No'])
+      ->one();
+
+    if (!$user) {
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => 0,
+        'message' => Yii::t('app', 'Invalid or expired password reset token.'),
+      ], 400);
+    }
+
+    $user->password = sha1($password);
+    $user->password_reset_token = '';
+    $user->save(false);
+
+    Yii::$app->MyFunctions->JsonPrint([
+      'status' => 1,
+      'message' => Yii::t('app', 'Password has been reset successfully. You can now log in with your new password.'),
+    ]);
   }
 
   public function actionCreatepaymentintent()

@@ -67,26 +67,23 @@ class Appuser extends \yii\db\ActiveRecord implements IdentityInterface
             //[['first_name', 'last_name', 'otp', 'email_verify_code', 'image', 'password_reset_token', 'address', 'latitude', 'longitude','updated_at', 'created_at'], 'required'],
 
 
-            [['first_name', 'last_name', 'email', 'password', 'postal_code', 'phone_number', 'devices_type', 'devices_name', 'devices_id', 'app_version'], 'required', 'on' => 'usersignup'],
+            [['first_name', 'last_name', 'email', 'password', 'phone_number'], 'required', 'on' => 'usersignup'],
+
+            [['email'], 'email'],
 
             [['first_name', 'last_name'], 'required', 'on' => 'apiupdateprofile'],
 
             [['password'], 'required', 'on' => 'resetpassword'],
 
-            [['email', 'login_type', 'email', 'login_type', 'phone_verify'], 'required', 'on' => 'websignup'],
-
-            //[['email'],'required','on'=>'apiupdateprofile'],
+            [['email', 'login_type', 'phone_verify'], 'required', 'on' => 'websignup'],
 
             [['email'], 'unique', 'on' => ['usersignup', 'apiupdateprofile', 'userregister', 'normalusersignup', 'createadmin'], 'filter' => ['<>', 'is_deleted', 'Yes']],
 
-            //[['email'], 'unique'],
-            //[['phone_number'],'default','value'=>"",'on'=>['apiupdateprofile']],
-
-            [['email'], 'unique', 'on' => ['usersignup', 'apiupdateprofile', 'normalusersignup', 'createadmin'], 'filter' => ['<>', 'is_deleted', 'Yes']],
-
             [['devices_type', 'devices_name', 'devices_id', 'app_version'], 'required', 'on' => ['autologin']],
 
-            [['email', 'password', 'devices_type', 'devices_name', 'devices_id', 'app_version'], 'required', 'on' => ['login']],
+            [['email', 'password'], 'required', 'on' => ['login']],
+
+            [['devices_type', 'devices_name', 'devices_id', 'app_version', 'devices_token'], 'safe', 'on' => ['login', 'usersignup']],
 
             [['email_verify_code', 'email_verify_token', 'devices_type', 'devices_name', 'devices_id', 'app_version', 'os'], 'required', 'on' => ['otpverify']],
 
@@ -296,34 +293,41 @@ class Appuser extends \yii\db\ActiveRecord implements IdentityInterface
 
     public function sendPasswordResetLink()
     {
-
         $this->generatePasswordResetToken();
-        $this->save();
+        $this->save(false);
         if ($this->password_reset_token != "" || !empty($this->password_reset_token)) {
             try {
+                $fromEmail = !empty(Yii::$app->params['supportEmail']) ? Yii::$app->params['supportEmail'] : (!empty(Yii::$app->params['senderEmail']) ? Yii::$app->params['senderEmail'] : 'info@sunriseblackcar.com');
+                $fromName = !empty(Yii::$app->params['project_display_name']) ? Yii::$app->params['project_display_name'] : 'Sunrise Black Car';
+
                 Yii::$app->mailer->htmlLayout = "@app/mail/layouts/htmlnew";
                 return Yii::$app->mailer->compose(['html' => 'userforgotpassword'], ['user' => $this, 'from' => 'user'])
-                    ->setFrom([Yii::$app->params['supportEmail'] => Yii::$app->params['project_display_name']])
+                    ->setFrom([$fromEmail => $fromName])
                     ->setTo($this->email)
                     ->setSubject('Forgot Password')
                     ->send();
-            } catch (Exception $e) {
+            } catch (\Throwable $e) {
+                Yii::error('Password reset email error: ' . $e->getMessage(), 'forgotpassword');
                 return false;
             }
         }
         return false;
     }
+
     public function sendWelcomeMail()
     {
-
         try {
+            $fromEmail = !empty(Yii::$app->params['supportEmail']) ? Yii::$app->params['supportEmail'] : (!empty(Yii::$app->params['senderEmail']) ? Yii::$app->params['senderEmail'] : 'info@sunriseblackcar.com');
+            $fromName = !empty(Yii::$app->params['project_display_name']) ? Yii::$app->params['project_display_name'] : 'Sunrise Black Car';
+
             Yii::$app->mailer->htmlLayout = "@app/mail/layouts/htmlnew";
             return Yii::$app->mailer->compose(['html' => 'userwelcome'], ['user' => $this, 'from' => 'user'])
-                ->setFrom([Yii::$app->params['supportEmail'] => Yii::$app->params['project_display_name']])
+                ->setFrom([$fromEmail => $fromName])
                 ->setTo($this->email)
                 ->setSubject('Welcome')
                 ->send();
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
+            Yii::error('Welcome email error: ' . $e->getMessage(), 'welcome');
             return false;
         }
     }

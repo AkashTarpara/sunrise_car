@@ -6,6 +6,97 @@ use Yii;
 
 class ServiceAreaHelper
 {
+    private static $_floridaZipMap = null;
+
+    /**
+     * Get the full associative map of allowed Florida ZIP codes: [zip => areaName]
+     *
+     * @return array
+     */
+    public static function getFloridaZipMap()
+    {
+        if (self::$_floridaZipMap !== null) {
+            return self::$_floridaZipMap;
+        }
+
+        $discrete = [
+            'Key Largo' => ['33037'],
+            'Jupiter' => ['33458', '33469', '33477', '33478'],
+            'Hallandale Beach' => ['33008', '33009'],
+            'Tavernier' => ['33070'],
+            'Islamorada' => ['33036'],
+            'Florida City' => ['33034'],
+            'Homestead' => ['33030', '33031', '33032', '33033', '33035'],
+            'Sebastian' => ['32958'],
+            'Miami' => [
+                '33101', '33109', '33125', '33126', '33127', '33128', '33129', '33130', '33131', '33132',
+                '33133', '33134', '33135', '33136', '33137', '33138', '33139', '33140', '33141', '33142',
+                '33143', '33144', '33145', '33146', '33147', '33149', '33150', '33151', '33152', '33153',
+                '33154', '33155', '33156', '33157', '33158', '33160', '33161', '33162', '33165', '33166',
+                '33167', '33168', '33169', '33170', '33172', '33173', '33174', '33175', '33176', '33177',
+                '33178', '33179', '33180', '33181', '33182', '33183', '33184', '33185', '33186', '33187',
+                '33189', '33190', '33193', '33194', '33196'
+            ],
+            'Kissimmee' => [
+                '34741', '34742', '34743', '34744', '34745', '34746', '34747', '34758', '34769', '34770',
+                '34771', '34772', '34773', '34788'
+            ],
+            'Tampa' => [
+                '33647', '33650', '33655', '33660', '33662', '33663', '33664', '33694'
+            ],
+            'Naples' => [
+                '34102', '34103', '34104', '34105', '34108', '34109', '34110', '34112', '34113', '34114',
+                '34116', '34117', '34119', '34120', '34145'
+            ],
+            'Punta Gorda' => ['33950', '33951', '33980', '33981', '33982', '33983'],
+            'Cape Coral' => ['33904', '33909', '33914', '33919', '33990', '33991', '33993'],
+            'Fort Myers' => [
+                '33901', '33902', '33903', '33905', '33906', '33907', '33908', '33911', '33912', '33913',
+                '33916', '33917', '33919', '33965', '33966', '33967', '33971', '33973'
+            ],
+        ];
+
+        $ranges = [
+            'West Palm Beach' => [[33401, 33422]],
+            'Fort Lauderdale' => [[33301, 33351]],
+            'Boca Raton' => [[33427, 33488]],
+            'Delray Beach' => [[33444, 33484]],
+            'Boynton Beach' => [[33426, 33474]],
+            'Palm Beach Gardens' => [[33408, 33418]],
+            'Port St. Lucie' => [[34952, 34987]],
+            'Fort Pierce' => [[34945, 34982]],
+            'Vero Beach' => [[32960, 32969]],
+            'Melbourne' => [[32901, 32941]],
+            'Palm Bay' => [[32905, 32911]],
+            'Titusville' => [[32754, 32796]],
+            'Orlando' => [[32801, 32899]],
+            'Tampa' => [
+                [33601, 33626],
+                [33629, 33637],
+                [33672, 33675],
+                [33677, 33681],
+                [33684, 33689]
+            ],
+        ];
+
+        $map = [];
+        foreach ($discrete as $area => $zips) {
+            foreach ($zips as $z) {
+                $map[(string)$z] = $area;
+            }
+        }
+        foreach ($ranges as $area => $rList) {
+            foreach ($rList as $r) {
+                for ($z = $r[0]; $z <= $r[1]; $z++) {
+                    $map[(string)$z] = $area;
+                }
+            }
+        }
+
+        self::$_floridaZipMap = $map;
+        return self::$_floridaZipMap;
+    }
+
     /**
      * Get all supported service zones, cities, counties, and airports.
      *
@@ -19,6 +110,9 @@ class ServiceAreaHelper
                 'states' => ['FL', 'Florida'],
                 'cities' => [
                     'Key Largo',
+                    'Tavernier',
+                    'Islamorada',
+                    'Florida City',
                     'Homestead',
                     'Kendall',
                     'Doral',
@@ -47,6 +141,7 @@ class ServiceAreaHelper
                     'Boca Raton',
                     'Boynton Beach',
                     'Boyton Beach',
+                    'Delray Beach',
                     'West Palm Beach',
                     'Palm Beach',
                     'North Palm Beach',
@@ -54,7 +149,12 @@ class ServiceAreaHelper
                     'Port Saint Lucie',
                     'Port St Lucie',
                     'Port St. Lucie',
+                    'Fort Pierce',
                     'Vero Beach',
+                    'Sebastian',
+                    'Melbourne',
+                    'Palm Bay',
+                    'Titusville',
                     'Orlando',
                     'Kissimmee',
                     'Tampa',
@@ -82,9 +182,9 @@ class ServiceAreaHelper
                     'Coral Springs',
                     'Pompano Beach',
                     'Deerfield Beach',
-                    'Delray Beach',
                     'Wellington',
                 ],
+                'zip_count' => count(self::getFloridaZipMap()),
                 'airports' => [
                     ['code' => 'MIA', 'name' => 'Miami International Airport', 'keywords' => ['MIA', 'Miami International Airport', 'Miami Airport']],
                     ['code' => 'FLL', 'name' => 'Fort Lauderdale–Hollywood International Airport', 'keywords' => ['FLL', 'Fort Lauderdale Airport', 'Fort Lauderdale Hollywood', 'Fort Lauderdale–Hollywood', 'Fort Lauderdale-Hollywood']],
@@ -155,15 +255,19 @@ class ServiceAreaHelper
             return '';
         }
 
+        if (is_numeric($location)) {
+            return (string) $location;
+        }
+
         if (is_string($location)) {
             return trim($location);
         }
 
         if (is_array($location)) {
             $parts = [];
-            foreach (['formatted_address', 'address', 'name', 'city', 'state', 'airportCode', 'code'] as $key) {
-                if (!empty($location[$key]) && is_string($location[$key])) {
-                    $parts[] = trim($location[$key]);
+            foreach (['zip', 'postal_code', 'zipcode', 'formatted_address', 'address', 'name', 'city', 'state', 'airportCode', 'code'] as $key) {
+                if (!empty($location[$key]) && (is_string($location[$key]) || is_numeric($location[$key]))) {
+                    $parts[] = trim((string)$location[$key]);
                 }
             }
             if (!empty($parts)) {
@@ -177,6 +281,10 @@ class ServiceAreaHelper
 
     /**
      * Check if a location string falls within our allowed service areas.
+     * Checks:
+     *  1. Florida ZIP code match (from user's allowed ZIP list)
+     *  2. Airport code & name match
+     *  3. City / area name match
      *
      * @param mixed $location
      * @return array
@@ -191,13 +299,37 @@ class ServiceAreaHelper
                 'region_key' => null,
                 'matched' => null,
                 'location' => '',
-                'message' => 'Location is empty.',
+                'message' => Yii::t('app', 'Location is empty.'),
             ];
+        }
+
+        $flZipMap = self::getFloridaZipMap();
+
+        // 1. Check for 5-digit ZIP code in the location string
+        if (preg_match_all('/\b(\d{5})\b/', $rawText, $zipMatches)) {
+            foreach ($zipMatches[1] as $zipCandidate) {
+                if (isset($flZipMap[$zipCandidate])) {
+                    $areaName = $flZipMap[$zipCandidate];
+                    return [
+                        'valid' => true,
+                        'region' => 'Florida / South Florida',
+                        'region_key' => 'florida',
+                        'matched' => $areaName . ' (ZIP ' . $zipCandidate . ')',
+                        'matched_zip' => $zipCandidate,
+                        'type' => 'zip',
+                        'location' => $rawText,
+                        'message' => Yii::t('app', 'Location is within our Florida service area (ZIP {zip} - {area}).', [
+                            'zip' => $zipCandidate,
+                            'area' => $areaName,
+                        ]),
+                    ];
+                }
+            }
         }
 
         $zones = self::getAllowedAreas();
 
-        // 1. Check for specific airport codes and airport names first
+        // 2. Check for specific airport codes and airport names
         foreach ($zones as $zoneKey => $zone) {
             foreach ($zone['airports'] as $airport) {
                 foreach ($airport['keywords'] as $kw) {
@@ -210,14 +342,16 @@ class ServiceAreaHelper
                             'matched' => $airport['name'] . ' (' . $airport['code'] . ')',
                             'type' => 'airport',
                             'location' => $rawText,
-                            'message' => 'Location is within our service area.',
+                            'message' => Yii::t('app', 'Location is within our service area ({airport}).', [
+                                'airport' => $airport['name'],
+                            ]),
                         ];
                     }
                 }
             }
         }
 
-        // 2. Check for city / area names (strictly from the allowed list)
+        // 3. Check for city / area names (strictly from the allowed list)
         foreach ($zones as $zoneKey => $zone) {
             foreach ($zone['cities'] as $city) {
                 $pattern = '/\b' . preg_quote($city, '/') . '\b/i';
@@ -229,7 +363,9 @@ class ServiceAreaHelper
                         'matched' => $city,
                         'type' => 'city',
                         'location' => $rawText,
-                        'message' => 'Location is within our service area.',
+                        'message' => Yii::t('app', 'Location is within our service area ({city}).', [
+                            'city' => $city,
+                        ]),
                     ];
                 }
             }
@@ -242,7 +378,9 @@ class ServiceAreaHelper
             'matched' => null,
             'type' => null,
             'location' => $rawText,
-            'message' => 'Location is outside our supported service areas.',
+            'message' => Yii::t('app', 'Location "{location}" is outside our supported service areas.', [
+                'location' => $rawText,
+            ]),
         ];
     }
 

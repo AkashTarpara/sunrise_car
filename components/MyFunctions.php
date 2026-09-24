@@ -1425,11 +1425,12 @@ class MyFunctions extends Component
     $data['last_name'] = $model->last_name;
     $data['full_name'] = $model->full_name;
     $data['phone_code'] = $model->phone_code;
-    $data['phone_number'] = $model->phone_number;
+    $data['phone_number'] = (string) $model->phone_number;
+    $data['phone_no'] = (string) $model->phone_number;
+    $data['phone'] = (string) $model->phone_number;
     $data['postal_code'] = $model->postal_code;
     $data['email'] = $model->email;
     $image = Yii::$app->params['ImagePath'] . 'uploads/default/user-placeholderdefault.png';
-    $data['email'] = $model->email;
     $data['image'] = (!empty($model->image)) ? Yii::$app->params['ImagePath'] . $model->image : $image;
     $data['login_type'] = $model->login_type;
     $data['status'] = $model->status;
