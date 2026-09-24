@@ -36,6 +36,7 @@ return [
 
     'web_url' => ($_ENV['WEBURL'] ?: ''),
     'web_site_url' => ($_ENV['WEBSITEURL'] ?: ''),
+    'main_website_url' => ($_ENV['MAIN_WEBSITE_URL'] ?? 'https://sunriseblackcar.com/'),
     'twitter_url' => '',
     'linkedIn_url' => '',
     'instagram_url' => '',

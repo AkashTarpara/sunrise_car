@@ -193,6 +193,8 @@ class SiteController extends Controller
         $model->scenario = "forrgotpassword";
         $token = trim((string)Yii::$app->request->post('token', Yii::$app->request->get('token', $_REQUEST['token'] ?? '')));
 
+        $mainWebsiteUrl = !empty(Yii::$app->params['main_website_url']) ? Yii::$app->params['main_website_url'] : 'https://sunriseblackcar.com/';
+
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
             $user = !empty($token) ? Appuser::find()->where(['password_reset_token' => $token])->one() : null;
             if ($user != null) {
@@ -200,8 +202,7 @@ class SiteController extends Controller
                 $user->password_reset_token = "";
                 $user->save(false);
                 Yii::$app->session->setFlash('success', 'You have successfully reset your password.');
-                $redirectUrl = !empty(Yii::$app->params['web_site_url']) ? Yii::$app->params['web_site_url'] : ['site/login'];
-                return $this->redirect($redirectUrl);
+                return $this->redirect($mainWebsiteUrl);
             }
             Yii::$app->session->setFlash('error', 'Your reset password link is invalid or has expired.');
             return $this->render('resetPassword', ['model' => $model, 'modeluser' => null]);
@@ -213,14 +214,12 @@ class SiteController extends Controller
                 return $this->render('resetPassword', ['model' => $model, 'modeluser' => $user]);
             } else {
                 Yii::$app->session->setFlash('error', 'Your reset password url is expired or invalid.');
-                $redirectUrl = !empty(Yii::$app->params['web_site_url']) ? Yii::$app->params['web_site_url'] : ['site/login'];
-                return $this->redirect($redirectUrl);
+                return $this->redirect($mainWebsiteUrl);
             }
         }
 
         Yii::$app->session->setFlash('error', 'Invalid password reset token.');
-        $redirectUrl = !empty(Yii::$app->params['web_site_url']) ? Yii::$app->params['web_site_url'] : ['site/login'];
-        return $this->redirect($redirectUrl);
+        return $this->redirect($mainWebsiteUrl);
     }
 
     public function actionUserlogin()
