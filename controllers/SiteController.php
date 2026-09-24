@@ -191,34 +191,36 @@ class SiteController extends Controller
         $this->layout = "login";
         $model = new PasswordForm();
         $model->scenario = "forrgotpassword";
-        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+        $token = trim((string)Yii::$app->request->post('token', Yii::$app->request->get('token', $_REQUEST['token'] ?? '')));
 
-            $user = Appuser::find()->where(['password_reset_token' => $_REQUEST['token']])->one();
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            $user = !empty($token) ? Appuser::find()->where(['password_reset_token' => $token])->one() : null;
             if ($user != null) {
                 $user->password = sha1($model['password']);
                 $user->password_reset_token = "";
-                $user->save();
+                $user->save(false);
                 Yii::$app->session->setFlash('success', 'You have successfully reset your password.');
-                return $this->redirect(Yii::$app->params['web_site_url']);
-                //return $this->render('successpassword');  
+                $redirectUrl = !empty(Yii::$app->params['web_site_url']) ? Yii::$app->params['web_site_url'] : ['site/login'];
+                return $this->redirect($redirectUrl);
             }
-            return $this->render('resetPassword', ['model' => $model, 'modeluser' => $user]);
+            Yii::$app->session->setFlash('error', 'Your reset password link is invalid or has expired.');
+            return $this->render('resetPassword', ['model' => $model, 'modeluser' => null]);
         }
 
-
-        if (!empty($_REQUEST['token'])) {
-            $user = Appuser::find()->where(['password_reset_token' => $_REQUEST['token']])->one();
+        if (!empty($token)) {
+            $user = Appuser::find()->where(['password_reset_token' => $token])->one();
             if ($user != null) {
                 return $this->render('resetPassword', ['model' => $model, 'modeluser' => $user]);
             } else {
-                Yii::$app->session->setFlash('error', 'Your reset password url is expired.');
-                return $this->redirect(Yii::$app->params['web_site_url']);
-                //return $this->render('successpassword');
-                exit;
+                Yii::$app->session->setFlash('error', 'Your reset password url is expired or invalid.');
+                $redirectUrl = !empty(Yii::$app->params['web_site_url']) ? Yii::$app->params['web_site_url'] : ['site/login'];
+                return $this->redirect($redirectUrl);
             }
         }
 
-        return $this->render('resetPassword', ['model' => $model, 'modeluser' => $user]);
+        Yii::$app->session->setFlash('error', 'Invalid password reset token.');
+        $redirectUrl = !empty(Yii::$app->params['web_site_url']) ? Yii::$app->params['web_site_url'] : ['site/login'];
+        return $this->redirect($redirectUrl);
     }
 
     public function actionUserlogin()

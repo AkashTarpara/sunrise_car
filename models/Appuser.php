@@ -300,11 +300,11 @@ class Appuser extends \yii\db\ActiveRecord implements IdentityInterface
                 $fromEmail = !empty(Yii::$app->params['supportEmail']) ? Yii::$app->params['supportEmail'] : (!empty(Yii::$app->params['senderEmail']) ? Yii::$app->params['senderEmail'] : 'info@sunriseblackcar.com');
                 $fromName = !empty(Yii::$app->params['project_display_name']) ? Yii::$app->params['project_display_name'] : 'Sunrise Black Car';
 
-                Yii::$app->mailer->htmlLayout = "@app/mail/layouts/htmlnew";
+                Yii::$app->mailer->htmlLayout = false;
                 return Yii::$app->mailer->compose(['html' => 'userforgotpassword'], ['user' => $this, 'from' => 'user'])
                     ->setFrom([$fromEmail => $fromName])
                     ->setTo($this->email)
-                    ->setSubject('Forgot Password')
+                    ->setSubject('Forgot Password - ' . $fromName)
                     ->send();
             } catch (\Throwable $e) {
                 Yii::error('Password reset email error: ' . $e->getMessage(), 'forgotpassword');

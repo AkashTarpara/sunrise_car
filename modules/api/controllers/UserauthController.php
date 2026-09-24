@@ -63,9 +63,26 @@ class UserauthController extends Controller
     global $application_module_id;
     $this->enableCsrfValidation = false;
 
-    $headers = Yii::$app->request->headers;
-    $authorizationHeader = $headers->get('auth_key');
+    if (Yii::$app->request->isOptions) {
+      Yii::$app->response->statusCode = 204;
+      Yii::$app->end();
+    }
 
+    $headers = Yii::$app->request->headers;
+    $authorizationHeader = $headers->get('auth_key') ?: ($headers->get('auth-key') ?: $headers->get('authKey'));
+    if (empty($authorizationHeader)) {
+      $authHeader = $headers->get('Authorization') ?: $headers->get('authorization');
+      if (!empty($authHeader)) {
+        if (preg_match('/^Bearer\s+(.*)$/i', $authHeader, $matches)) {
+          $authorizationHeader = trim($matches[1]);
+        } else {
+          $authorizationHeader = trim($authHeader);
+        }
+      }
+    }
+    if (empty($authorizationHeader)) {
+      $authorizationHeader = Yii::$app->request->post('auth_key', Yii::$app->request->get('auth_key'));
+    }
 
     if (isset($authorizationHeader) && !empty($authorizationHeader)) {
 
@@ -102,11 +119,33 @@ class UserauthController extends Controller
   {
     global $user;
     $headers = Yii::$app->request->headers;
-    $authorizationHeader = $headers->get('auth_key');
-    $UserDevice = Appuserdevicesinfo::find()->andWhere(["auth_key" => $authorizationHeader])->one();
-    if ($UserDevice) {
-      $UserDevice->delete();
+    $authorizationHeader = $headers->get('auth_key') ?: ($headers->get('auth-key') ?: $headers->get('authKey'));
+    if (empty($authorizationHeader)) {
+      $authHeader = $headers->get('Authorization') ?: $headers->get('authorization');
+      if (!empty($authHeader)) {
+        if (preg_match('/^Bearer\s+(.*)$/i', $authHeader, $matches)) {
+          $authorizationHeader = trim($matches[1]);
+        } else {
+          $authorizationHeader = trim($authHeader);
+        }
+      }
     }
+    if (empty($authorizationHeader)) {
+      $authorizationHeader = Yii::$app->request->post('auth_key', Yii::$app->request->get('auth_key'));
+    }
+
+    $devicesId = Yii::$app->request->post('devices_id', Yii::$app->request->get('devices_id', Yii::$app->request->post('deviceId', Yii::$app->request->get('deviceId'))));
+
+    if (!empty($authorizationHeader)) {
+      Appuserdevicesinfo::deleteAll(['auth_key' => $authorizationHeader]);
+    }
+    if (!empty($devicesId)) {
+      Appuserdevicesinfo::deleteAll(['devices_id' => $devicesId]);
+    }
+    if (empty($authorizationHeader) && empty($devicesId) && !empty($user->appuser_id)) {
+      Appuserdevicesinfo::deleteAll(['appuser_id' => $user->appuser_id]);
+    }
+
     Yii::$app->MyFunctions->JsonPrint(array('status' => 1, 'message' => Yii::t('app', 'Logout successfully.')));
   }
 

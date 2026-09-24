@@ -14,19 +14,19 @@ return [
     'contactCcEmail' => ($_ENV['CONTACT_CC_EMAIL'] ?: ''),
     'applicationEmail' => (
         $_ENV['application_email']
-        ?: ($_SERVER['application_email']
-        ?: (getenv('application_email')
+        ?? ($_SERVER['application_email']
+        ?? (getenv('application_email')
         ?: ($_ENV['APPLICATION_EMAIL']
-        ?: ($_SERVER['APPLICATION_EMAIL']
-        ?: getenv('APPLICATION_EMAIL')))))
+        ?? ($_SERVER['APPLICATION_EMAIL']
+        ?? getenv('APPLICATION_EMAIL')))))
     ),
     'applicationCcEmail' => (
         $_ENV['application_cc_email']
-        ?: ($_SERVER['application_cc_email']
-        ?: (getenv('application_cc_email')
+        ?? ($_SERVER['application_cc_email']
+        ?? (getenv('application_cc_email')
         ?: ($_ENV['APPLICATION_CC_EMAIL']
-        ?: ($_SERVER['APPLICATION_CC_EMAIL']
-        ?: getenv('APPLICATION_CC_EMAIL')))))
+        ?? ($_SERVER['APPLICATION_CC_EMAIL']
+        ?? getenv('APPLICATION_CC_EMAIL')))))
     ),
     'project_display_name' => 'Sunrise Car',
 

@@ -40,6 +40,7 @@ $this->params['breadcrumbs'][] = $this->title;
 </div>
 <h4 class="text-center f-w-500 mb-3">Reset your Password</h4>
 <?php $form = ActiveForm::begin(['id' => 'login-form']); ?>
+<?= Html::hiddenInput('token', Yii::$app->request->get('token', $_REQUEST['token'] ?? '')) ?>
 <?php $fieldOptions3 = [
   'options' => ['class' => 'form-group has-feedback'],
   'inputTemplate' => "{input}<span toggle='#password-field' class='form-control-feedback glyphicon glyphicon-eye-close toggle-password'></span>"

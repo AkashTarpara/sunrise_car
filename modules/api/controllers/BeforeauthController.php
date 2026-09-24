@@ -18,6 +18,7 @@ use app\models\Event;
 use app\models\Generalsetting;
 use app\models\Contactus;
 use app\models\Appuser;
+use app\models\Appuserdevicesinfo;
 use app\models\Aboutus;
 use app\models\Advertisement;
 use app\models\Tradepropartner;
@@ -1359,6 +1360,48 @@ class BeforeauthController extends Controller
     Yii::$app->MyFunctions->JsonPrint([
       'status' => 1,
       'message' => Yii::t('app', 'Password has been reset successfully. You can now log in with your new password.'),
+    ]);
+  }
+
+  // 11 - Logout API
+  public function actionLogout()
+  {
+    $headers = Yii::$app->request->headers;
+    $authKey = $headers->get('auth_key') ?: ($headers->get('auth-key') ?: $headers->get('authKey'));
+    if (empty($authKey)) {
+      $authHeader = $headers->get('Authorization') ?: $headers->get('authorization');
+      if (!empty($authHeader)) {
+        if (preg_match('/^Bearer\s+(.*)$/i', $authHeader, $matches)) {
+          $authKey = trim($matches[1]);
+        } else {
+          $authKey = trim($authHeader);
+        }
+      }
+    }
+
+    $payload = Yii::$app->request->getBodyParams();
+    if (empty($payload)) {
+      $rawBody = file_get_contents('php://input');
+      $decoded = json_decode($rawBody, true);
+      $payload = is_array($decoded) ? $decoded : $_REQUEST;
+    } else {
+      $payload = array_merge($_REQUEST, $payload);
+    }
+
+    if (empty($authKey)) {
+      $authKey = $payload['auth_key'] ?? ($payload['authKey'] ?? null);
+    }
+    $devicesId = $payload['devices_id'] ?? ($payload['deviceId'] ?? ($payload['devicesId'] ?? null));
+
+    if (!empty($authKey)) {
+      Appuserdevicesinfo::deleteAll(['auth_key' => $authKey]);
+    } elseif (!empty($devicesId)) {
+      Appuserdevicesinfo::deleteAll(['devices_id' => $devicesId]);
+    }
+
+    Yii::$app->MyFunctions->JsonPrint([
+      'status' => 1,
+      'message' => Yii::t('app', 'Logout successfully.'),
     ]);
   }
 
