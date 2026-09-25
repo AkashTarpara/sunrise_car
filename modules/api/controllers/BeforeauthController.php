@@ -471,20 +471,41 @@ class BeforeauthController extends Controller
 
   public function actionGetfleetlist()
   {
-    // ── Input params ──────────────────────────────────────────────────────────
-    $type = trim((string) Yii::$app->request->get('type', Yii::$app->request->post('type')));
+    // ── Unified input parsing (GET, POST JSON flat, or POST JSON with nested ride object) ──
+    $bodyParams = Yii::$app->request->getBodyParams();
+    if (empty($bodyParams)) {
+      $rawInput = file_get_contents('php://input');
+      $decoded = json_decode($rawInput, true);
+      $bodyParams = is_array($decoded) ? $decoded : [];
+    }
+    $queryParams = Yii::$app->request->get();
+    $params = array_merge($queryParams, is_array($bodyParams) ? $bodyParams : []);
+    $rideParams = (isset($params['ride']) && is_array($params['ride'])) ? $params['ride'] : [];
+
+    $getParam = function ($keys, $default = null) use ($params, $rideParams) {
+      if (!is_array($keys)) {
+        $keys = [$keys];
+      }
+      foreach ($keys as $k) {
+        if (isset($params[$k]) && $params[$k] !== '') {
+          return $params[$k];
+        }
+        if (isset($rideParams[$k]) && $rideParams[$k] !== '') {
+          return $rideParams[$k];
+        }
+      }
+      return $default;
+    };
+
+    $type = trim((string) $getParam('type', ''));
 
     // Service type: 'distance' (default) or 'hourly'
-    $serviceRaw = trim((string) Yii::$app->request->get('service', Yii::$app->request->post('service', '')));
+    $serviceRaw = trim((string) $getParam('service', ''));
     $service    = strtolower($serviceRaw);
 
     // Hours / duration param for hourly booking (e.g. 2, 3.5, 4)
-    $hoursRaw = Yii::$app->request->get('hours', Yii::$app->request->post('hours',
-      Yii::$app->request->get('duration', Yii::$app->request->post('duration',
-      Yii::$app->request->get('duration_hours', Yii::$app->request->post('duration_hours',
-      Yii::$app->request->get('hourly_duration', Yii::$app->request->post('hourly_duration'))))))
-    ));
-    $hours = (is_numeric($hoursRaw) && (float) $hoursRaw > 0) ? round((float) $hoursRaw, 2) : null;
+    $hoursRaw = $getParam(['hours', 'duration', 'duration_hours', 'hourly_duration']);
+    $hours    = (is_numeric($hoursRaw) && (float) $hoursRaw > 0) ? round((float) $hoursRaw, 2) : null;
 
     if (!empty($hours) && empty($service)) {
       $service = 'hourly';
@@ -494,45 +515,33 @@ class BeforeauthController extends Controller
     }
 
     // Miles param — to calculate distance ride charge
-    $milesRaw = Yii::$app->request->get('miles', Yii::$app->request->post('miles',
-      Yii::$app->request->get('distance', Yii::$app->request->post('distance',
-      Yii::$app->request->get('distance_miles', Yii::$app->request->post('distance_miles'))))
-    ));
-    $miles = (is_numeric($milesRaw) && (float) $milesRaw > 0) ? round((float) $milesRaw, 2) : null;
+    $milesRaw = $getParam(['miles', 'distance', 'distance_miles']);
+    $miles    = (is_numeric($milesRaw) && (float) $milesRaw > 0) ? round((float) $milesRaw, 2) : null;
 
     // Date param (YYYY-MM-DD) — for availability filtering
-    $dateRaw   = trim((string) Yii::$app->request->get('date', Yii::$app->request->post('date',
-      Yii::$app->request->get('pickup_date', Yii::$app->request->post('pickup_date'))
-    )));
+    $dateRaw   = trim((string) $getParam(['date', 'pickup_date'], ''));
     $checkDate = (!empty($dateRaw) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateRaw)) ? $dateRaw : null;
 
     // Passengers param — return only fleets with capacity >= this number
-    $passengersRaw = Yii::$app->request->get('passengers', Yii::$app->request->post('passengers',
-      Yii::$app->request->get('passenger', Yii::$app->request->post('passenger',
-      Yii::$app->request->get('seats', Yii::$app->request->post('seats',
-      Yii::$app->request->get('guests', Yii::$app->request->post('guests'))))))
-    ));
+    $passengersRaw = $getParam(['passengers', 'passenger', 'seats', 'guests']);
     $minPassengers = (is_numeric($passengersRaw) && (int) $passengersRaw > 0) ? (int) $passengersRaw : null;
 
     // Luggage param — return only fleets with luggage capacity >= this number
-    $luggageRaw = Yii::$app->request->get('luggage', Yii::$app->request->post('luggage',
-      Yii::$app->request->get('laggage', Yii::$app->request->post('laggage',
-      Yii::$app->request->get('bags', Yii::$app->request->post('bags'))))
-    ));
+    $luggageRaw = $getParam(['luggage', 'laggage', 'bags']);
     $minLuggage = (is_numeric($luggageRaw) && (int) $luggageRaw > 0) ? (int) $luggageRaw : null;
 
     // Filter by minimum hours: whether to exclude vehicles requiring more hours than requested
-    $filterMinHoursRaw = Yii::$app->request->get('filter_min_hours', Yii::$app->request->post('filter_min_hours'));
-    $includeUnavailable = (bool) (int) Yii::$app->request->get('include_unavailable', Yii::$app->request->post('include_unavailable', 0));
-    $filterMinHours = ($filterMinHoursRaw !== null)
+    $filterMinHoursRaw  = $getParam('filter_min_hours');
+    $includeUnavailable = (bool) (int) $getParam('include_unavailable', 0);
+    $filterMinHours     = ($filterMinHoursRaw !== null)
       ? (bool) (int) $filterMinHoursRaw
       : ($hours !== null && !$includeUnavailable);
 
     // Optional location / ZIP validation
-    $zip = trim((string) Yii::$app->request->get('zip', Yii::$app->request->post('zip', Yii::$app->request->get('postal_code', Yii::$app->request->post('postal_code')))));
-    $pickup = Yii::$app->request->get('pickup', Yii::$app->request->post('pickup', Yii::$app->request->get('pickup_zip', Yii::$app->request->post('pickup_zip'))));
-    $dropoff = Yii::$app->request->get('dropoff', Yii::$app->request->post('dropoff', Yii::$app->request->get('dropoff_zip', Yii::$app->request->post('dropoff_zip'))));
-    $location = Yii::$app->request->get('location', Yii::$app->request->post('location'));
+    $zip      = trim((string) $getParam(['zip', 'postal_code'], ''));
+    $pickup   = $getParam(['pickup', 'pickup_zip', 'pickup_location']);
+    $dropoff  = $getParam(['dropoff', 'dropoff_zip', 'dropoff_location']);
+    $location = $getParam('location');
 
     if (!empty($pickup) && !empty($dropoff)) {
       $tripCheck = ServiceAreaHelper::validateTrip($pickup, $dropoff);
