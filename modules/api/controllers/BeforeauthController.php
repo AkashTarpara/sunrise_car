@@ -97,11 +97,49 @@ class BeforeauthController extends Controller
       ], 409);
     }
 
-    // Option B: Validate that BOTH pickup and dropoff locations are inside our allowed service areas
+    // Service type: 'distance' or 'hourly'
+    $service = strtolower(trim((string) ($ride['service'] ?? ($payload['service'] ?? 'distance'))));
+
+    // Hours / duration for hourly booking
+    $hours = null;
+    if (isset($ride['hours']) && is_numeric($ride['hours'])) {
+      $hours = round((float) $ride['hours'], 2);
+    } elseif (isset($payload['hours']) && is_numeric($payload['hours'])) {
+      $hours = round((float) $payload['hours'], 2);
+    } elseif (isset($ride['duration_hours']) && is_numeric($ride['duration_hours'])) {
+      $hours = round((float) $ride['duration_hours'], 2);
+    } elseif (isset($payload['duration_hours']) && is_numeric($payload['duration_hours'])) {
+      $hours = round((float) $payload['duration_hours'], 2);
+    } elseif (isset($payload['duration']) && is_numeric($payload['duration'])) {
+      $hours = round((float) $payload['duration'], 2);
+    }
+
+    if ($hours !== null && empty($service)) {
+      $service = 'hourly';
+    }
+
+    // Miles for distance booking
+    $miles = null;
+    if (isset($ride['miles']) && is_numeric($ride['miles'])) {
+      $miles = round((float) $ride['miles'], 2);
+    } elseif (isset($quote['miles']) && is_numeric($quote['miles'])) {
+      $miles = round((float) $quote['miles'], 2);
+    } elseif (isset($payload['miles']) && is_numeric($payload['miles'])) {
+      $miles = round((float) $payload['miles'], 2);
+    }
+
+    // Option B: Validate that locations are inside our allowed service areas
     $pickupLocation = $ride['pickup'] ?? ($payload['pickup'] ?? null);
     $dropoffLocation = $ride['dropoff'] ?? ($payload['dropoff'] ?? null);
 
-    $areaValidation = ServiceAreaHelper::validateTrip($pickupLocation, $dropoffLocation);
+    if (!empty($pickupLocation) && !empty($dropoffLocation)) {
+      $areaValidation = ServiceAreaHelper::validateTrip($pickupLocation, $dropoffLocation);
+    } elseif (!empty($pickupLocation)) {
+      $areaValidation = ServiceAreaHelper::validateLocation($pickupLocation);
+    } else {
+      $areaValidation = ['valid' => false, 'message' => Yii::t('app', 'Pickup location is required.')];
+    }
+
     if (!$areaValidation['valid']) {
       Yii::$app->MyFunctions->JsonPrint([
         'status'  => 0,
@@ -110,7 +148,30 @@ class BeforeauthController extends Controller
       ], 422);
     }
 
-    $total = round((float) $fleet->base_price, 2);
+    // Enforce minimum hours requirement for hourly bookings
+    $minHours = max(1, (int) $fleet->minimum_hours);
+    if ($service === 'hourly' || ($hours !== null && $hours > 0)) {
+      if ($hours !== null && $hours < $minHours) {
+        Yii::$app->MyFunctions->JsonPrint([
+          'status'  => 0,
+          'message' => Yii::t('app', 'This vehicle requires a minimum booking of {min} hours (you requested {requested} hours).', [
+            'min'       => $minHours,
+            'requested' => $hours,
+          ]),
+          'data'    => [
+            'vehicle_id'      => $fleet->id,
+            'minimum_hours'   => $minHours,
+            'requested_hours' => $hours,
+            'hourly_price'    => (float) $fleet->hourly_price,
+          ],
+        ], 422);
+      }
+    }
+
+    // Calculate total charge using Fleet model pricing rules
+    $chargeBreakdown = $fleet->calculateCharge($service, $miles, $hours);
+    $total = $chargeBreakdown['total_charge'];
+
     $currency = strtolower((string) ($payload['currency'] ?? 'usd'));
     $paymentMode = Yii::$app->params['payment_stripe_mode'];
     $secretKey = $paymentMode === 'live'
@@ -128,21 +189,33 @@ class BeforeauthController extends Controller
         'currency' => $currency,
         'automatic_payment_methods' => ['enabled' => true],
         'metadata' => [
-          'vehicle_id' => (string) $fleet->id,
-          'pickup_date' => $pickupDate,
-          'pickup_time' => $pickupTime,
+          'vehicle_id'    => (string) $fleet->id,
+          'service'       => $service,
+          'hours'         => $hours !== null ? (string) $hours : '',
+          'minimum_hours' => (string) $minHours,
+          'miles'         => $miles !== null ? (string) $miles : '',
+          'pickup_date'   => $pickupDate,
+          'pickup_time'   => $pickupTime,
         ],
       ]);
+
+      // Merge breakdown into quote_data
+      if (empty($quote)) {
+        $quote = $chargeBreakdown;
+      } else {
+        $quote['charge_breakdown'] = $chargeBreakdown;
+        $quote['total'] = $total;
+      }
 
       $booking = new Booking();
       $booking->fleet_id = $fleet->id;
       $booking->pickup_date = $pickupDate;
       $booking->pickup_time = $pickupTime;
-      $booking->service = $ride['service'] ?? null;
+      $booking->service = $service;
       $booking->pickup_location_type = $ride['pickupLocationType'] ?? null;
       $booking->dropoff_location_type = $ride['dropoffLocationType'] ?? null;
-      $booking->pickup = $ride['pickup'] ?? null;
-      $booking->dropoff = $ride['dropoff'] ?? null;
+      $booking->pickup = $pickupLocation;
+      $booking->dropoff = $dropoffLocation;
       $booking->ride_data = json_encode($ride);
       $booking->quote_data = json_encode($quote);
       $booking->extras = json_encode($payload['extras'] ?? []);
@@ -153,7 +226,7 @@ class BeforeauthController extends Controller
       $booking->terms_accepted = true;
       $booking->base_price = $fleet->base_price;
       $booking->km_per_hour_price = $fleet->km_per_hour_price;
-      $booking->distance_price = (float) ($quote['distance_price'] ?? 0);
+      $booking->distance_price = (float) ($quote['distance_price'] ?? ($chargeBreakdown['miles_charge'] ?? 0));
       $booking->total = $total;
       $booking->currency = $currency;
       $booking->payment_intent_id = $paymentIntent->id;
@@ -175,6 +248,7 @@ class BeforeauthController extends Controller
           'paymentIntentId' => $paymentIntent->id,
           'total' => $total,
           'currency' => $currency,
+          'chargeBreakdown' => $chargeBreakdown,
           'paymentStatus' => $booking->payment_status,
           'bookingStatus' => $booking->booking_status,
         ],
@@ -400,17 +474,59 @@ class BeforeauthController extends Controller
     // ── Input params ──────────────────────────────────────────────────────────
     $type = trim((string) Yii::$app->request->get('type', Yii::$app->request->post('type')));
 
+    // Service type: 'distance' (default) or 'hourly'
+    $serviceRaw = trim((string) Yii::$app->request->get('service', Yii::$app->request->post('service', '')));
+    $service    = strtolower($serviceRaw);
+
+    // Hours / duration param for hourly booking (e.g. 2, 3.5, 4)
+    $hoursRaw = Yii::$app->request->get('hours', Yii::$app->request->post('hours',
+      Yii::$app->request->get('duration', Yii::$app->request->post('duration',
+      Yii::$app->request->get('duration_hours', Yii::$app->request->post('duration_hours',
+      Yii::$app->request->get('hourly_duration', Yii::$app->request->post('hourly_duration'))))))
+    ));
+    $hours = (is_numeric($hoursRaw) && (float) $hoursRaw > 0) ? round((float) $hoursRaw, 2) : null;
+
+    if (!empty($hours) && empty($service)) {
+      $service = 'hourly';
+    }
+    if (empty($service)) {
+      $service = 'distance';
+    }
+
+    // Miles param — to calculate distance ride charge
+    $milesRaw = Yii::$app->request->get('miles', Yii::$app->request->post('miles',
+      Yii::$app->request->get('distance', Yii::$app->request->post('distance',
+      Yii::$app->request->get('distance_miles', Yii::$app->request->post('distance_miles'))))
+    ));
+    $miles = (is_numeric($milesRaw) && (float) $milesRaw > 0) ? round((float) $milesRaw, 2) : null;
+
     // Date param (YYYY-MM-DD) — for availability filtering
-    $dateRaw   = trim((string) Yii::$app->request->get('date', Yii::$app->request->post('date')));
+    $dateRaw   = trim((string) Yii::$app->request->get('date', Yii::$app->request->post('date',
+      Yii::$app->request->get('pickup_date', Yii::$app->request->post('pickup_date'))
+    )));
     $checkDate = (!empty($dateRaw) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateRaw)) ? $dateRaw : null;
 
-    // Miles param — to calculate ride charge
-    $milesRaw = Yii::$app->request->get('miles', Yii::$app->request->post('miles'));
-    $miles    = (is_numeric($milesRaw) && (float) $milesRaw > 0) ? round((float) $milesRaw, 2) : null;
-
     // Passengers param — return only fleets with capacity >= this number
-    $passengersRaw = Yii::$app->request->get('passengers', Yii::$app->request->post('passengers'));
+    $passengersRaw = Yii::$app->request->get('passengers', Yii::$app->request->post('passengers',
+      Yii::$app->request->get('passenger', Yii::$app->request->post('passenger',
+      Yii::$app->request->get('seats', Yii::$app->request->post('seats',
+      Yii::$app->request->get('guests', Yii::$app->request->post('guests'))))))
+    ));
     $minPassengers = (is_numeric($passengersRaw) && (int) $passengersRaw > 0) ? (int) $passengersRaw : null;
+
+    // Luggage param — return only fleets with luggage capacity >= this number
+    $luggageRaw = Yii::$app->request->get('luggage', Yii::$app->request->post('luggage',
+      Yii::$app->request->get('laggage', Yii::$app->request->post('laggage',
+      Yii::$app->request->get('bags', Yii::$app->request->post('bags'))))
+    ));
+    $minLuggage = (is_numeric($luggageRaw) && (int) $luggageRaw > 0) ? (int) $luggageRaw : null;
+
+    // Filter by minimum hours: whether to exclude vehicles requiring more hours than requested
+    $filterMinHoursRaw = Yii::$app->request->get('filter_min_hours', Yii::$app->request->post('filter_min_hours'));
+    $includeUnavailable = (bool) (int) Yii::$app->request->get('include_unavailable', Yii::$app->request->post('include_unavailable', 0));
+    $filterMinHours = ($filterMinHoursRaw !== null)
+      ? (bool) (int) $filterMinHoursRaw
+      : ($hours !== null && !$includeUnavailable);
 
     // Optional location / ZIP validation
     $zip = trim((string) Yii::$app->request->get('zip', Yii::$app->request->post('zip', Yii::$app->request->get('postal_code', Yii::$app->request->post('postal_code')))));
@@ -456,7 +572,6 @@ class BeforeauthController extends Controller
     foreach ($query->all() as $fleet) {
 
       // ── Passenger capacity filter ─────────────────────────────────────────
-      // passenger is stored as string — cast to int for comparison
       if ($minPassengers !== null) {
         $fleetCapacity = (int) $fleet->passenger;
         if ($fleetCapacity < $minPassengers) {
@@ -464,51 +579,51 @@ class BeforeauthController extends Controller
         }
       }
 
-      // ── Availability check ────────────────────────────────────────────────
-      $isAvailable = ($checkDate !== null)
+      // ── Luggage capacity filter ───────────────────────────────────────────
+      if ($minLuggage !== null) {
+        $fleetLuggage = (int) $fleet->laggage;
+        if ($fleetLuggage < $minLuggage) {
+          continue; // skip — not enough luggage space
+        }
+      }
+
+      // ── Minimum hours check for hourly bookings ───────────────────────────
+      $fleetMinHours = max(1, (int) $fleet->minimum_hours);
+      $meetsMinHours = ($hours === null || $hours >= $fleetMinHours);
+
+      // If filter_min_hours is active, exclude vehicles requiring more hours than requested
+      if ($filterMinHours && !$meetsMinHours) {
+        continue;
+      }
+
+      // ── Date Availability check ───────────────────────────────────────────
+      $isDateAvailable = ($checkDate !== null)
         ? $fleet->isAvailableForDate($checkDate)
         : (bool) $fleet->is_available;
 
-      // If a date was supplied, skip unavailable vehicles entirely
-      if ($checkDate !== null && !$isAvailable) {
+      // Overall availability requires date available AND meeting min hours
+      $isAvailable = $isDateAvailable && $meetsMinHours;
+
+      // If a date was supplied, skip unavailable vehicles unless include_unavailable is requested
+      if ($checkDate !== null && !$isAvailable && !$includeUnavailable) {
         continue;
       }
 
       // ── Pricing calculation ───────────────────────────────────────────────
-      // km_per_hour_price is treated as price-per-mile
-      $pricePerMile = round((float) $fleet->km_per_hour_price, 4);
-      $basePrice    = round((float) $fleet->base_price, 2);
-
-      if ($miles !== null) {
-        $mileCharge  = round($miles * $pricePerMile, 2);
-        // Use whichever is higher: base_price or miles * price_per_mile
-        $totalCharge = max($basePrice, $mileCharge);
-        $chargeBreakdown = [
-          'miles'          => $miles,
-          'price_per_mile' => $pricePerMile,
-          'miles_charge'   => $mileCharge,
-          'base_price'     => $basePrice,
-          'total_charge'   => $totalCharge,
-          'charge_basis'   => ($basePrice >= $mileCharge) ? 'base_price' : 'miles',
-        ];
-      } else {
-        $totalCharge     = $basePrice;
-        $chargeBreakdown = [
-          'miles'          => null,
-          'price_per_mile' => $pricePerMile,
-          'miles_charge'   => null,
-          'base_price'     => $basePrice,
-          'total_charge'   => $totalCharge,
-          'charge_basis'   => 'base_price',
-        ];
-      }
+      $chargeBreakdown = $fleet->calculateCharge($service, $miles, $hours);
+      $totalCharge     = $chargeBreakdown['total_charge'];
 
       // ── Build response item ───────────────────────────────────────────────
-      $item                    = Yii::$app->MyFunctions->getFleetObject($fleet);
-      $item['is_available']    = (int) $isAvailable;
-      $item['available_after'] = $fleet->available_after;
-      $item['charge']          = $totalCharge;
-      $item['charge_breakdown']= $chargeBreakdown;
+      $item                     = Yii::$app->MyFunctions->getFleetObject($fleet);
+      $item['is_available']     = (int) $isAvailable;
+      $item['is_date_available']= (int) $isDateAvailable;
+      $item['meets_min_hours']  = (bool) $meetsMinHours;
+      $item['minimum_hours']    = $fleetMinHours;
+      $item['hourly_price']     = (float) $fleet->hourly_price;
+      $item['available_after']  = $fleet->available_after;
+      $item['service']          = $service;
+      $item['charge']           = $totalCharge;
+      $item['charge_breakdown'] = $chargeBreakdown;
 
       $data[] = $item;
     }

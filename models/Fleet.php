@@ -31,8 +31,11 @@ class Fleet extends \yii\db\ActiveRecord
     {
         return [
             [['label', 'name', 'type'], 'required'],
-            [['laggage'], 'integer'],
-            [['base_price', 'km_per_hour_price'], 'number', 'min' => 0],
+            [['laggage', 'minimum_hours'], 'integer'],
+            [['minimum_hours'], 'default', 'value' => 1],
+            [['minimum_hours'], 'compare', 'compareValue' => 1, 'operator' => '>=', 'type' => 'number'],
+            [['base_price', 'km_per_hour_price', 'hourly_price'], 'number', 'min' => 0],
+            [['hourly_price'], 'default', 'value' => 0.00],
             [['description'], 'string'],
             [['created_at', 'updated_at', 'deleted_at', 'images'], 'safe'],
             [['label', 'name', 'passenger'], 'string', 'max' => 255],
@@ -60,6 +63,8 @@ class Fleet extends \yii\db\ActiveRecord
             'laggage'          => Yii::t('app', 'Laggage'),
             'base_price'       => Yii::t('app', 'Base Price'),
             'km_per_hour_price'=> Yii::t('app', 'Km Per Hour Price'),
+            'hourly_price'     => Yii::t('app', 'Hourly Price'),
+            'minimum_hours'    => Yii::t('app', 'Minimum Hours'),
             'description'      => Yii::t('app', 'Description'),
             'status'           => Yii::t('app', 'Status'),
             'type'             => Yii::t('app', 'Type'),
@@ -69,6 +74,63 @@ class Fleet extends \yii\db\ActiveRecord
             'created_at'       => Yii::t('app', 'Created At'),
             'updated_at'       => Yii::t('app', 'Updated At'),
             'deleted_at'       => Yii::t('app', 'Deleted At'),
+        ];
+    }
+
+    /**
+     * Calculate ride charge for this fleet based on distance or hourly duration.
+     *
+     * @param string $service 'distance' or 'hourly'
+     * @param float|null $miles
+     * @param float|null $hours
+     * @return array
+     */
+    public function calculateCharge($service = 'distance', $miles = null, $hours = null)
+    {
+        $basePrice    = round((float) $this->base_price, 2);
+        $pricePerMile = round((float) $this->km_per_hour_price, 4);
+        $hourlyRate   = round((float) $this->hourly_price, 2);
+        $minHours     = max(1, (int) $this->minimum_hours);
+
+        if ($service === 'hourly' || ($hours !== null && (float)$hours > 0)) {
+            $requestedHours = round((float) $hours, 2);
+            $billedHours    = max($requestedHours, $minHours);
+            $hourlyCharge   = round($billedHours * $hourlyRate, 2);
+            $totalCharge    = max($basePrice, $hourlyCharge);
+
+            return [
+                'service'         => 'hourly',
+                'requested_hours' => $requestedHours,
+                'minimum_hours'   => $minHours,
+                'billed_hours'    => $billedHours,
+                'hourly_price'    => $hourlyRate,
+                'hourly_charge'   => $hourlyCharge,
+                'base_price'      => $basePrice,
+                'total_charge'    => $totalCharge,
+                'charge_basis'    => ($basePrice >= $hourlyCharge) ? 'base_price' : 'hourly',
+                'meets_min_hours' => ($requestedHours >= $minHours),
+            ];
+        }
+
+        if ($miles !== null && (float)$miles > 0) {
+            $mileCharge  = round((float)$miles * $pricePerMile, 2);
+            $totalCharge = max($basePrice, $mileCharge);
+            return [
+                'service'        => 'distance',
+                'miles'          => round((float)$miles, 2),
+                'price_per_mile' => $pricePerMile,
+                'miles_charge'   => $mileCharge,
+                'base_price'     => $basePrice,
+                'total_charge'   => $totalCharge,
+                'charge_basis'   => ($basePrice >= $mileCharge) ? 'base_price' : 'miles',
+            ];
+        }
+
+        return [
+            'service'      => 'base',
+            'base_price'   => $basePrice,
+            'total_charge' => $basePrice,
+            'charge_basis' => 'base_price',
         ];
     }
 

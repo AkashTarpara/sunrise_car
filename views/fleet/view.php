@@ -23,8 +23,10 @@ $this->params['breadcrumbs'][] = $this->title;
             <p><strong>Name:</strong> <?= Html::encode($model->name) ?></p>
             <p><strong>Passenger:</strong> <?= Html::encode($model->passenger) ?></p>
             <p><strong>Laggage:</strong> <?= Html::encode($model->laggage) ?></p>
-            <p><strong>Base Price:</strong> <?= Html::encode($model->base_price) ?></p>
-            <p><strong>Km Per Hour Price:</strong> <?= Html::encode($model->km_per_hour_price) ?></p>
+            <p><strong>Base Price:</strong> $<?= Html::encode($model->base_price) ?></p>
+            <p><strong>Price Per Mile:</strong> $<?= Html::encode($model->km_per_hour_price) ?></p>
+            <p><strong>Hourly Price:</strong> $<?= Html::encode($model->hourly_price) ?>/hr</p>
+            <p><strong>Minimum Hours Required:</strong> <?= Html::encode($model->minimum_hours) ?> hrs</p>
             <p><strong>Type:</strong> <?= Html::encode($model->type) ?></p>
             <p><strong>Status:</strong> <?= Html::encode($model->status) ?></p>
             <p><strong>Is Available:</strong>

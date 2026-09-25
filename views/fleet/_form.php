@@ -20,8 +20,10 @@ $form = ActiveForm::begin(['options' => ['enctype' => 'multipart/form-data']]);
 </div>
 
 <div class="row">
-    <div class="col-md-6"><?= $form->field($model, 'base_price')->textInput(['type' => 'number', 'min' => 0, 'step' => '0.01']) ?></div>
-    <div class="col-md-6"><?= $form->field($model, 'km_per_hour_price')->textInput(['type' => 'number', 'min' => 0, 'step' => '0.01']) ?></div>
+    <div class="col-md-3"><?= $form->field($model, 'base_price')->textInput(['type' => 'number', 'min' => 0, 'step' => '0.01'])->label('Base Price ($)') ?></div>
+    <div class="col-md-3"><?= $form->field($model, 'km_per_hour_price')->textInput(['type' => 'number', 'min' => 0, 'step' => '0.01'])->label('Price Per Mile ($)') ?></div>
+    <div class="col-md-3"><?= $form->field($model, 'hourly_price')->textInput(['type' => 'number', 'min' => 0, 'step' => '0.01'])->label('Hourly Price ($/hr)')->hint('Hourly charter rate') ?></div>
+    <div class="col-md-3"><?= $form->field($model, 'minimum_hours')->textInput(['type' => 'number', 'min' => 1, 'step' => 1])->label('Minimum Hours')->hint('Min hours required to book') ?></div>
 </div>
 
 <div class="row">

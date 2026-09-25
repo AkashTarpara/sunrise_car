@@ -1584,6 +1584,8 @@ class MyFunctions extends Component
       'laggage'           => $model->laggage,
       'base_price'        => $model->base_price,
       'km_per_hour_price' => $model->km_per_hour_price,
+      'hourly_price'      => (float) ($model->hourly_price ?? 0),
+      'minimum_hours'     => (int) ($model->minimum_hours ?? 1),
       'description'       => $model->description,
       'status'            => $model->status,
       'type'              => $model->type,

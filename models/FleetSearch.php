@@ -10,8 +10,8 @@ class FleetSearch extends Fleet
     public function rules()
     {
         return [
-            [['id', 'laggage'], 'integer'],
-            [['base_price', 'km_per_hour_price'], 'number'],
+            [['id', 'laggage', 'minimum_hours'], 'integer'],
+            [['base_price', 'km_per_hour_price', 'hourly_price'], 'number'],
             [['label', 'name', 'passenger', 'status', 'type'], 'safe'],
         ];
     }
@@ -40,8 +40,10 @@ class FleetSearch extends Fleet
         $query->andFilterWhere([
             'id' => $this->id,
             'laggage' => $this->laggage,
+            'minimum_hours' => $this->minimum_hours,
             'base_price' => $this->base_price,
             'km_per_hour_price' => $this->km_per_hour_price,
+            'hourly_price' => $this->hourly_price,
             'status' => $this->status,
             'type' => $this->type,
         ]);

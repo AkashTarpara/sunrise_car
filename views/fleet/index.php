@@ -30,6 +30,20 @@ $this->params['breadcrumbs'][] = $this->title;
                         'name',
                         'passenger',
                         'type',
+                        [
+                            'attribute' => 'hourly_price',
+                            'label'     => 'Hourly Rate',
+                            'value'     => function ($model) {
+                                return '$' . number_format((float)$model->hourly_price, 2) . '/hr';
+                            },
+                        ],
+                        [
+                            'attribute' => 'minimum_hours',
+                            'label'     => 'Min Hours',
+                            'value'     => function ($model) {
+                                return $model->minimum_hours . ' hrs';
+                            },
+                        ],
                         'status',
                         [
                             'attribute' => 'is_available',
