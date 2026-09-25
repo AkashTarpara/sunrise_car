@@ -507,6 +507,11 @@ class BeforeauthController extends Controller
 
   public function actionGetfleetlist()
   {
+    if (Yii::$app->request->isOptions || (isset($_SERVER['REQUEST_METHOD']) && strtoupper($_SERVER['REQUEST_METHOD']) === 'OPTIONS')) {
+      Yii::$app->response->statusCode = 200;
+      Yii::$app->MyFunctions->JsonPrint(['status' => 1, 'message' => 'OK']);
+    }
+
     // ── Unified input parsing (GET, POST JSON flat, or POST JSON with nested ride object) ──
     $bodyParams = Yii::$app->request->getBodyParams();
     if (empty($bodyParams)) {
@@ -716,8 +721,12 @@ class BeforeauthController extends Controller
       $emptyMessage = Yii::t('app', 'No vehicles available matching your search criteria.');
       if ($checkDate !== null) {
         $emptyMessage = Yii::t('app', 'No vehicles available for {date}. Please try a different date or vehicle type.', ['date' => $checkDate]);
+      } elseif ($minPassengers !== null) {
+        $emptyMessage = Yii::t('app', 'No vehicles available for {passengers} passengers. Please contact us for larger groups.', ['passengers' => $minPassengers]);
       } elseif ($hours !== null) {
         $emptyMessage = Yii::t('app', 'No vehicles available for {hours} hours booking. Please check minimum hours requirement.', ['hours' => $hours]);
+      } elseif (!empty($type)) {
+        $emptyMessage = Yii::t('app', 'No vehicles available for type "{type}". Please select another category.', ['type' => $type]);
       }
       $response = [
         'status'  => 0,
