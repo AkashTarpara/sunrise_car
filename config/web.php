@@ -55,13 +55,31 @@ $config = [
                 $response = $event->sender;
                 $origin = $request->headers->get('Origin');
                 $allowedOrigins = [
+                    'http://localhost:3000',
                     'http://localhost:3001',
                     'http://localhost:3002',
                     'http://localhost:3003',
+                    'http://localhost:5173',
+                    'http://localhost:8080',
+                    'http://127.0.0.1:3000',
+                    'http://127.0.0.1:3001',
+                    'http://127.0.0.1:5173',
+                    'https://texiweb.netlify.app',
+                    'https://www.luxurylayers.pro',
+                    'https://luxurylayers.pro',
+                    'https://sunriseblackcar.com',
+                    'https://www.sunriseblackcar.com',
                     'http://52.15.131.71',
                 ];
 
-                if ($origin && in_array($origin, $allowedOrigins, true)) {
+                $isAllowed = false;
+                if ($origin) {
+                    if (in_array($origin, $allowedOrigins, true) || preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?$#i', $origin)) {
+                        $isAllowed = true;
+                    }
+                }
+
+                if ($isAllowed) {
                     $response->headers->set('Access-Control-Allow-Origin', $origin);
                     $response->headers->set('Access-Control-Allow-Credentials', 'true');
                     $response->headers->set('Vary', 'Origin');
@@ -71,9 +89,33 @@ $config = [
                     'Access-Control-Allow-Methods',
                     'GET, POST, PUT, PATCH, DELETE, OPTIONS'
                 );
+
+                $allowedHeadersList = [
+                    'Content-Type',
+                    'Authorization',
+                    'auth_key',
+                    'auth-key',
+                    'Auth-Key',
+                    'authkey',
+                    'X-Requested-With',
+                    'X-CSRF-Token',
+                    'X-Idempotency-Key',
+                    'Accept',
+                    'Origin',
+                ];
+                $reqHeaders = $request->headers->get('Access-Control-Request-Headers');
+                if (!empty($reqHeaders)) {
+                    foreach (explode(',', $reqHeaders) as $h) {
+                        $hTrim = trim($h);
+                        if (!empty($hTrim) && !in_array($hTrim, $allowedHeadersList, true)) {
+                            $allowedHeadersList[] = $hTrim;
+                        }
+                    }
+                }
+
                 $response->headers->set(
                     'Access-Control-Allow-Headers',
-                    'Content-Type, Authorization, X-Requested-With, X-CSRF-Token, X-Idempotency-Key'
+                    implode(', ', $allowedHeadersList)
                 );
                 $response->headers->set('Access-Control-Max-Age', '86400');
             },

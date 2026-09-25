@@ -34,16 +34,44 @@ use app\models\StripeCardFingerprint;
 use Stripe\PaymentIntent;
 
 $allowed_origins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+  'http://localhost:3003',
   'http://localhost:5173',
+  'http://localhost:8080',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001',
+  'http://127.0.0.1:5173',
+  'https://texiweb.netlify.app',
   'https://www.luxurylayers.pro/',
   'https://www.luxurylayers.pro',
+  'https://sunriseblackcar.com',
+  'https://www.sunriseblackcar.com',
 ];
 
-if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $allowed_origins)) {
-  header("Access-Control-Allow-Origin: " . $_SERVER['HTTP_ORIGIN']);
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$isAllowed = false;
+if ($origin && (in_array($origin, $allowed_origins, true) || preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?$#i', $origin))) {
+  $isAllowed = true;
+}
+
+if ($isAllowed) {
+  header("Access-Control-Allow-Origin: " . $origin);
   header("Access-Control-Allow-Credentials: true");
-  header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-  header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, auth_key");
+  header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  $reqHeaders = $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'] ?? '';
+  $allowedHeaders = 'Content-Type, Authorization, auth_key, auth-key, Auth-Key, authkey, X-Requested-With, X-CSRF-Token, X-Idempotency-Key, Accept, Origin';
+  if (!empty($reqHeaders)) {
+    $allowedHeaders .= ', ' . $reqHeaders;
+  }
+  header("Access-Control-Allow-Headers: " . $allowedHeaders);
+  header("Access-Control-Max-Age: 86400");
+}
+
+if (isset($_SERVER['REQUEST_METHOD']) && strtoupper($_SERVER['REQUEST_METHOD']) === 'OPTIONS') {
+  http_response_code(204);
+  exit;
 }
 
 class UserauthController extends Controller
