@@ -59,18 +59,20 @@ if ($origin && (in_array($origin, $allowed_origins, true) || preg_match('#^https
 if ($isAllowed) {
   header("Access-Control-Allow-Origin: " . $origin);
   header("Access-Control-Allow-Credentials: true");
-  header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  $reqHeaders = $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'] ?? '';
-  $allowedHeaders = 'Content-Type, Authorization, auth_key, auth-key, Auth-Key, authkey, X-Requested-With, X-CSRF-Token, X-Idempotency-Key, Accept, Origin';
-  if (!empty($reqHeaders)) {
-    $allowedHeaders .= ', ' . $reqHeaders;
-  }
-  header("Access-Control-Allow-Headers: " . $allowedHeaders);
-  header("Access-Control-Max-Age: 86400");
+} else {
+  header("Access-Control-Allow-Origin: *");
 }
+header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
+$reqHeaders = $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'] ?? '';
+$allowedHeaders = 'Content-Type, Authorization, auth_key, auth-key, Auth-Key, authkey, X-Requested-With, X-CSRF-Token, X-Idempotency-Key, Accept, Origin';
+if (!empty($reqHeaders)) {
+  $allowedHeaders .= ', ' . $reqHeaders;
+}
+header("Access-Control-Allow-Headers: " . $allowedHeaders);
+header("Access-Control-Max-Age: 86400");
 
 if (isset($_SERVER['REQUEST_METHOD']) && strtoupper($_SERVER['REQUEST_METHOD']) === 'OPTIONS') {
-  http_response_code(204);
+  http_response_code(200);
   exit;
 }
 
