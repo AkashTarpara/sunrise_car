@@ -25,6 +25,7 @@ use app\models\Tradepropartner;
 use app\models\Fleet;
 use app\models\Booking;
 use app\components\ServiceAreaHelper;
+use app\components\GoogleMapsHelper;
 
 use app\models\Importcsv;
 use Aws\S3\S3Client;
@@ -146,6 +147,15 @@ class BeforeauthController extends Controller
         'message' => $areaValidation['message'],
         'data'    => $areaValidation['data'] ?? null,
       ], 422);
+    }
+
+    // Auto-calculate driving distance via Google Maps if miles was not provided
+    if ($service !== 'hourly' && $miles === null && !empty($pickupLocation) && !empty($dropoffLocation)) {
+      $distResult = GoogleMapsHelper::calculateDistance($pickupLocation, $dropoffLocation);
+      if ($distResult['success']) {
+        $miles = $distResult['miles'];
+        $ride['distance_details'] = $distResult;
+      }
     }
 
     // Enforce minimum hours requirement for hourly bookings
@@ -566,6 +576,45 @@ class BeforeauthController extends Controller
       }
     }
 
+    // ── Calculate driving miles via Google Maps if pickup & dropoff provided ────
+    $tripDetails = null;
+    if (!empty($pickup) && !empty($dropoff)) {
+      $shouldCalculate = ($miles === null) || (bool) (int) $getParam('recalculate_miles', 0);
+      if ($shouldCalculate) {
+        $distanceResult = GoogleMapsHelper::calculateDistance($pickup, $dropoff);
+        if ($distanceResult['success']) {
+          $miles = $distanceResult['miles'];
+          $tripDetails = [
+            'pickup'              => $pickup,
+            'dropoff'             => $dropoff,
+            'miles'               => $distanceResult['miles'],
+            'distance_text'       => $distanceResult['distance_text'],
+            'duration_minutes'    => $distanceResult['duration_minutes'],
+            'duration_hours'      => $distanceResult['duration_hours'],
+            'duration_text'       => $distanceResult['duration_text'],
+            'origin_address'      => $distanceResult['origin_address'],
+            'destination_address' => $distanceResult['destination_address'],
+            'source'              => $distanceResult['source'] ?? 'google_maps',
+          ];
+        } else {
+          Yii::warning('Google Maps distance calculation: ' . ($distanceResult['message'] ?? ''), 'google_maps');
+          $tripDetails = [
+            'pickup'  => $pickup,
+            'dropoff' => $dropoff,
+            'miles'   => null,
+            'note'    => $distanceResult['message'] ?? 'Could not calculate driving distance via Google Maps',
+          ];
+        }
+      } else {
+        $tripDetails = [
+          'pickup'  => $pickup,
+          'dropoff' => $dropoff,
+          'miles'   => $miles,
+          'source'  => 'manual',
+        ];
+      }
+    }
+
     // ── Build fleet query ─────────────────────────────────────────────────────
     $query = Fleet::find()
       ->where(['status' => 'Active', 'deleted_at' => null])
@@ -637,11 +686,19 @@ class BeforeauthController extends Controller
       $data[] = $item;
     }
 
-    Yii::$app->MyFunctions->JsonPrint([
+    $response = [
       'status'  => 1,
       'message' => Yii::t('app', 'List found'),
       'data'    => array_values($data),
-    ]);
+    ];
+    if ($tripDetails !== null) {
+      $response['trip'] = $tripDetails;
+    }
+    if ($miles !== null) {
+      $response['miles'] = $miles;
+    }
+
+    Yii::$app->MyFunctions->JsonPrint($response);
   }
 
   public function actionGetfleettypes()

@@ -46,6 +46,14 @@ return [
     'payment_stripe_mode' => ($_ENV['PAYMENT_STRIPE_MODE'] ?: ''),
     'payment_stripe_live_secret_key' => ($_ENV['PAYMENT_STRIPE_LIVE_SECRET_KEY'] ?: ''),
     'payment_stripe_test_secret_key' => ($_ENV['PAYMENT_STRIPE_TEST_SECRET_KEY'] ?: ''),
+    'google_maps_api_key' => (
+        $_ENV['GOOGLE_MAPS_API_KEY']
+        ?? ($_ENV['GOOGLE_API_KEY']
+        ?? ($_SERVER['GOOGLE_MAPS_API_KEY']
+        ?? ($_SERVER['GOOGLE_API_KEY']
+        ?? (getenv('GOOGLE_MAPS_API_KEY')
+        ?: (getenv('GOOGLE_API_KEY') ?: '')))))
+    ),
     'floraeditor' => "
     heightMin: 200,
         fontFamilySelection: true,
