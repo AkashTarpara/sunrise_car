@@ -18,6 +18,7 @@ $form = ActiveForm::begin(['options' => ['enctype' => 'multipart/form-data']]);
     <div class="col-md-3"><?= $form->field($model, 'latitude')->textInput(['placeholder' => '25.7617']) ?></div>
     <div class="col-md-3"><?= $form->field($model, 'longitude')->textInput(['placeholder' => '-80.1918']) ?></div>
 </div>
+<?= $form->field($model, 'url')->textInput(['maxlength' => true, 'placeholder' => 'https://example.com/event']) ?>
 <?= $form->field($model, 'description')->textarea(['rows' => 5]) ?>
 <?= $form->field($model, 'image')->fileInput() ?>
 <?php if (!$model->isNewRecord && $model->image): ?>

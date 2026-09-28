@@ -32,6 +32,9 @@ class Event extends \yii\db\ActiveRecord
             [['description'], 'string'],
             [['latitude', 'longitude'], 'number'],
             [['title', 'category', 'location', 'image', 'slug'], 'string', 'max' => 255],
+            [['url'], 'trim'],
+            [['url'], 'string', 'max' => 500],
+            [['url'], 'url', 'defaultScheme' => 'https'],
             [['status'], 'in', 'range' => ['Active', 'Inactive']],
             [['image'], 'file', 'extensions' => ['png', 'jpg', 'jpeg', 'webp', 'gif']],
             [['created_at'], 'default', 'value' => date('Y-m-d H:i:s')],
@@ -45,6 +48,7 @@ class Event extends \yii\db\ActiveRecord
             'event_id' => Yii::t('app', 'Event ID'),
             'event_date' => Yii::t('app', 'Event Date'),
             'event_time' => Yii::t('app', 'Event Time'),
+            'url' => Yii::t('app', 'Event URL'),
             'created_at' => Yii::t('app', 'Created At'),
             'updated_at' => Yii::t('app', 'Updated At'),
         ];

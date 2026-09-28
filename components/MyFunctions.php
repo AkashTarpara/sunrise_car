@@ -1551,6 +1551,7 @@ class MyFunctions extends Component
       'event_date' => $model->event_date,
       'event_time' => $model->event_time,
       'location' => $model->location,
+      'url' => (string) $model->url,
       'latitude' => $model->latitude,
       'longitude' => $model->longitude,
       'description' => $model->description,

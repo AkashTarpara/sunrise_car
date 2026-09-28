@@ -9,6 +9,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <p><strong>Category:</strong> <?= Html::encode($model->category) ?></p>
     <p><strong>Date:</strong> <?= Html::encode($model->event_date) ?> <?= Html::encode($model->event_time) ?></p>
     <p><strong>Location:</strong> <?= Html::encode($model->location) ?></p>
+    <?php if ($model->url): ?><p><strong>URL:</strong> <?= Html::a(Html::encode($model->url), $model->url, ['target' => '_blank', 'rel' => 'noopener']) ?></p><?php endif; ?>
     <p><?= nl2br(Html::encode($model->description)) ?></p>
     <?= Html::a('Update', ['update', 'id' => $model->event_id], ['class' => 'btn btn-primary']) ?>
     <?= Html::a('Delete', ['delete', 'id' => $model->event_id], ['class' => 'btn btn-danger', 'data-method' => 'post', 'data-confirm' => 'Delete this event?']) ?>
