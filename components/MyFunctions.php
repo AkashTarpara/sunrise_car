@@ -1598,6 +1598,61 @@ class MyFunctions extends Component
     ];
   }
 
+  public function getBookingObject($model)
+  {
+    if (empty($model)) {
+      return [];
+    }
+
+    $decode = function ($value) {
+      if (is_array($value)) {
+        return $value;
+      }
+      $decoded = json_decode((string) $value, true);
+      return is_array($decoded) ? $decoded : [];
+    };
+
+    $fleet = $model->fleet;
+    $fleetImage = '';
+    if ($fleet && !empty($fleet->fleetImages) && !empty($fleet->fleetImages[0]->image)) {
+      $fleetImage = Yii::$app->params['ImagePath'] . $fleet->fleetImages[0]->image;
+    }
+
+    return [
+      'booking_id'            => $model->id,
+      'booking_number'        => $model->booking_number,
+      'service'               => $model->service,
+      'pickup_date'           => $model->pickup_date,
+      'pickup_time'           => substr((string) $model->pickup_time, 0, 5),
+      'pickup'                => $model->pickup,
+      'dropoff'               => $model->dropoff,
+      'pickup_location_type'  => $model->pickup_location_type,
+      'dropoff_location_type' => $model->dropoff_location_type,
+      'is_upcoming'           => ($model->pickup_date . ' ' . $model->pickup_time) >= date('Y-m-d H:i:s') ? 'Y' : 'N',
+      'vehicle'               => $fleet ? [
+        'id'    => $fleet->id,
+        'name'  => $fleet->name,
+        'label' => $fleet->label,
+        'type'  => $fleet->type,
+        'image' => $fleetImage,
+      ] : null,
+      'ride'                  => $decode($model->ride_data),
+      'quote'                 => $decode($model->quote_data),
+      'extras'                => $decode($model->extras),
+      'passenger'             => $decode($model->passenger_data),
+      'notes'                 => (string) $model->notes,
+      'promo_code'            => (string) $model->promo_code,
+      'base_price'            => (float) $model->base_price,
+      'distance_price'        => (float) $model->distance_price,
+      'total'                 => (float) $model->total,
+      'currency'              => $model->currency,
+      'payment_status'        => $model->payment_status,
+      'booking_status'        => $model->booking_status,
+      'created_at'            => $model->created_at,
+      'updated_at'            => $model->updated_at,
+    ];
+  }
+
   public function getProductHomeObject($model)
   {
     $data = [];

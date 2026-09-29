@@ -244,6 +244,7 @@ class BeforeauthController extends Controller
       }
 
       $booking = new Booking();
+      $booking->appuser_id = $this->getOptionalAppuserId();
       $booking->fleet_id = $fleet->id;
       $booking->pickup_date = $pickupDate;
       $booking->pickup_time = $pickupTime;
@@ -293,6 +294,31 @@ class BeforeauthController extends Controller
       Yii::error($exception->getMessage(), 'booking.payment');
       Yii::$app->MyFunctions->JsonPrint(['status' => 0, 'message' => $exception->getMessage()], 500);
     }
+  }
+
+  // Returns the logged-in app user's id when a valid auth_key is sent, otherwise null (guest booking)
+  private function getOptionalAppuserId()
+  {
+    $headers = Yii::$app->request->headers;
+    $authKey = $headers->get('auth_key') ?: ($headers->get('auth-key') ?: $headers->get('authKey'));
+    if (empty($authKey)) {
+      $authHeader = $headers->get('Authorization') ?: $headers->get('authorization');
+      if (!empty($authHeader)) {
+        $authKey = preg_match('/^Bearer\s+(.*)$/i', $authHeader, $matches) ? trim($matches[1]) : trim($authHeader);
+      }
+    }
+    if (empty($authKey)) {
+      $authKey = Yii::$app->request->post('auth_key', Yii::$app->request->get('auth_key'));
+    }
+    if (empty($authKey)) {
+      return null;
+    }
+
+    $device = Appuserdevicesinfo::find()->where(['auth_key' => $authKey])->one();
+    if ($device && $device->appuser && $device->appuser->is_deleted != 'Yes') {
+      return (int) $device->appuser_id;
+    }
+    return null;
   }
 
   public function actionConfirmbookingpayment()

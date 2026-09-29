@@ -15,7 +15,7 @@ class Booking extends \yii\db\ActiveRecord
     {
         return [
             [['booking_number', 'fleet_id', 'pickup_date', 'pickup_time', 'ride_data', 'quote_data', 'passenger_data'], 'required'],
-            [['fleet_id'], 'integer'],
+            [['fleet_id', 'appuser_id'], 'integer'],
             [['pickup_date'], 'date', 'format' => 'php:Y-m-d'],
             [['pickup_time'], 'time', 'format' => 'php:H:i'],
             [['ride_data', 'quote_data', 'extras', 'passenger_data', 'notes', 'pickup', 'dropoff'], 'safe'],
@@ -48,6 +48,11 @@ class Booking extends \yii\db\ActiveRecord
     public function getFleet()
     {
         return $this->hasOne(Fleet::class, ['id' => 'fleet_id']);
+    }
+
+    public function getAppuser()
+    {
+        return $this->hasOne(Appuser::class, ['appuser_id' => 'appuser_id']);
     }
 
     public function beforeValidate()

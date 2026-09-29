@@ -20,6 +20,7 @@ use app\models\Generalsetting;
 use app\models\Appuserdevicesinfo;
 use app\models\Appuseraddress;
 use app\models\Appuserfavourite;
+use app\models\Booking;
 
 use DateTime;
 use DatePeriod;
@@ -367,6 +368,69 @@ class UserauthController extends Controller
         ]);
     }
 }
+
+  // Booking history of the logged-in user (paginated, newest first)
+  // Params: page (default 1), pagesize (default 10), type = all|upcoming|past (default all), booking_status (optional)
+  public function actionGetbookinghistory()
+  {
+    global $user;
+
+    $page = (isset($_REQUEST['page']) && $_REQUEST['page']) ? max(1, (int) $_REQUEST['page']) : 1;
+    $pagesize = (isset($_REQUEST['pagesize']) && $_REQUEST['pagesize']) ? min(100, max(1, (int) $_REQUEST['pagesize'])) : 10;
+    $type = (isset($_REQUEST['type']) && $_REQUEST['type']) ? strtolower($_REQUEST['type']) : 'all';
+    $bookingStatus = (isset($_REQUEST['booking_status']) && $_REQUEST['booking_status']) ? $_REQUEST['booking_status'] : '';
+
+    // Bookings linked to this user, plus guest bookings made with the same email
+    $query = Booking::find()
+      ->with(['fleet.fleetImages'])
+      ->where(['deleted_at' => null])
+      ->andWhere([
+        'or',
+        ['appuser_id' => $user->appuser_id],
+        [
+          'and',
+          ['appuser_id' => null],
+          new Expression("LOWER(JSON_UNQUOTE(JSON_EXTRACT(passenger_data, '$.email'))) = :email", [':email' => strtolower(trim($user->email))]),
+        ],
+      ]);
+
+    // Abandoned checkouts (never paid) are hidden unless a status is requested explicitly
+    if (!empty($bookingStatus)) {
+      $query->andWhere(['booking_status' => $bookingStatus]);
+    } else {
+      $query->andWhere(['<>', 'booking_status', 'pending_payment']);
+    }
+
+    $now = date('Y-m-d H:i:s');
+    $pickupDateTime = new Expression("CONCAT(pickup_date, ' ', pickup_time)");
+    if ($type === 'upcoming') {
+      $query->andWhere(['>=', $pickupDateTime, $now])->orderBy(['pickup_date' => SORT_ASC, 'pickup_time' => SORT_ASC]);
+    } elseif ($type === 'past') {
+      $query->andWhere(['<', $pickupDateTime, $now])->orderBy(['pickup_date' => SORT_DESC, 'pickup_time' => SORT_DESC]);
+    } else {
+      $query->orderBy(['pickup_date' => SORT_DESC, 'pickup_time' => SORT_DESC, 'id' => SORT_DESC]);
+    }
+
+    $provider = new ActiveDataProvider([
+      'query' => $query,
+      'pagination' => ['pageSize' => $pagesize, 'page' => $page - 1, 'validatePage' => false],
+    ]);
+
+    $data = [];
+    foreach ($provider->getModels() as $booking) {
+      $data[] = Yii::$app->MyFunctions->getBookingObject($booking);
+    }
+
+    $totalPage = $provider->pagination->pageCount;
+    Yii::$app->MyFunctions->JsonPrint([
+      'status' => 1,
+      'total_records' => $provider->getTotalCount(),
+      'total_page' => $totalPage,
+      'current_page' => $page,
+      'is_next_page' => $page < $totalPage ? 'Y' : 'N',
+      'data' => $data,
+    ]);
+  }
 
   // 3
   //Update Profile
