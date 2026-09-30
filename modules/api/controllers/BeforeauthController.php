@@ -1441,7 +1441,131 @@ class BeforeauthController extends Controller
     Yii::$app->MyFunctions->getModelErrors($model, "Y");
   }
 
-  // 11 
+  // Corporate account registration. Creates a Normal login user so it can sign in via actionLogin.
+  public function actionCorporatesignup()
+  {
+    $payload = Yii::$app->request->getBodyParams();
+    if (empty($payload)) {
+      $rawBody = file_get_contents('php://input');
+      $decoded = json_decode($rawBody, true);
+      $payload = is_array($decoded) ? $decoded : $_REQUEST;
+    } else {
+      $payload = array_merge($_REQUEST, $payload);
+    }
+
+    $data = isset($payload['Appuser']) ? $payload['Appuser'] : $payload;
+
+    // Accept both the form's camelCase names and snake_case names
+    $getValue = function ($keys, $default = '') use ($data) {
+      foreach ((array)$keys as $key) {
+        if (isset($data[$key]) && !is_array($data[$key]) && trim((string)$data[$key]) !== '') {
+          return trim((string)$data[$key]);
+        }
+      }
+      return $default;
+    };
+
+    $model = new Appuser();
+    $model->scenario = "corporatesignup";
+    $model->load([
+      'company_name' => $getValue(['company_name', 'companyName']),
+      'company_country' => $getValue(['company_country', 'country'], 'US'),
+      'company_region' => $getValue(['company_region', 'region']),
+      'company_city' => $getValue(['company_city', 'city']),
+      'travel_volume' => $getValue(['travel_volume', 'travelVolume']),
+      'first_name' => $getValue(['first_name', 'firstName']),
+      'last_name' => $getValue(['last_name', 'lastName']),
+      'job_title' => $getValue(['job_title', 'jobTitle']),
+      'email' => strtolower($getValue(['email', 'work_email', 'workEmail'])),
+      'phone_number' => $getValue(['phone_number', 'phone', 'phone_no', 'mobile']),
+      'password' => $getValue(['password']),
+      'confirm_password' => $getValue(['confirm_password', 'confirmPassword']),
+      'devices_type' => $getValue(['devices_type'], 'Web'),
+      'devices_token' => $getValue(['devices_token']),
+      'devices_name' => $getValue(['devices_name'], $_SERVER['HTTP_USER_AGENT'] ?? 'Web Browser'),
+      'devices_id' => $getValue(['devices_id']),
+      'app_version' => $getValue(['app_version'], '1.0'),
+    ], '');
+
+    $phoneCode = preg_replace('/\D/', '', $getValue(['phone_code', 'phoneCode'], '1'));
+    $model->phone_code = $phoneCode !== '' ? (int)$phoneCode : 1;
+
+    if (empty($model->devices_id)) {
+      $model->devices_id = 'web_' . md5(($model->email ?? '') . microtime());
+    }
+
+    $model->account_type = 'Corporate';
+    $model->login_type = 'Normal';
+    $model->role = '3';
+    $model->user_type = 'User';
+    $model->signup_type = 'Normal';
+
+    if ($model->validate() && $model->save()) {
+      $userDevice = Yii::$app->MyFunctions->setDeviceinfo($model);
+      $userData = Yii::$app->MyFunctions->getUserObject($model, $userDevice);
+      $userData['account_type'] = $model->account_type;
+      $userData['corporate'] = [
+        'company_name' => $model->company_name,
+        'company_country' => $model->company_country,
+        'company_region' => $model->company_region,
+        'company_city' => $model->company_city,
+        'travel_volume' => $model->travel_volume,
+        'job_title' => $model->job_title,
+      ];
+
+      try {
+        $model->sendWelcomeMail();
+      } catch (\Throwable $e) {
+        Yii::error('Welcome email sending error: ' . $e->getMessage(), 'welcome');
+      }
+
+      // Notify the corporate team so they can reach out within one business day
+      try {
+        $toEmail = !empty(Yii::$app->params['contactEmail']) ? Yii::$app->params['contactEmail'] : 'info@sunriseblackcar.com';
+        $fromEmail = !empty(Yii::$app->params['senderEmail']) ? Yii::$app->params['senderEmail'] : (!empty(Yii::$app->params['supportEmail']) ? Yii::$app->params['supportEmail'] : $toEmail);
+        $senderName = !empty(Yii::$app->params['senderName']) ? Yii::$app->params['senderName'] : 'Sunrise Black Car';
+
+        $rows = [
+          'Company Name' => $model->company_name,
+          'Headquarters / Country' => $model->company_country,
+          'Primary Region' => $model->company_region,
+          'Primary City / Base' => $model->company_city,
+          'Monthly Travel Volume' => $model->travel_volume,
+          'Contact Name' => $model->full_name,
+          'Job Title' => $model->job_title,
+          'Work Email' => $model->email,
+          'Phone Number' => '+' . $model->phone_code . ' ' . $model->phone_number,
+        ];
+        $htmlContent = "<div style='font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6;'>"
+          . "<h2 style='color: #111;'>New Corporate Account Registration</h2>"
+          . "<table style='width: 100%; max-width: 600px; border-collapse: collapse; margin-top: 15px;'>";
+        foreach ($rows as $label => $value) {
+          $htmlContent .= "<tr><td style='padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd; width: 180px;'>" . $label . ":</td><td style='padding: 8px; border-bottom: 1px solid #ddd;'>" . htmlspecialchars((string)$value) . "</td></tr>";
+        }
+        $htmlContent .= "</table></div>";
+
+        Yii::$app->mailer->compose()
+          ->setFrom([$fromEmail => $senderName])
+          ->setTo($toEmail)
+          ->setSubject('New Corporate Account: ' . $model->company_name)
+          ->setHtmlBody($htmlContent)
+          ->send();
+      } catch (\Throwable $e) {
+        Yii::error('Corporate signup email sending error: ' . $e->getMessage(), 'corporatesignup');
+      }
+
+      $message = Yii::t('app', 'Corporate account created successfully. Our corporate team will be in touch within one business day.');
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => 1,
+        'message' => $message,
+        'data' => $userData,
+      ]);
+    }
+
+    Yii::$app->MyFunctions->getModelErrors($model, "Y");
+  }
+
+  // 11
   public function actionLogin()
   {
     $payload = Yii::$app->request->getBodyParams();

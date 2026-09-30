@@ -39,6 +39,13 @@ use yii\base\NotSupportedException;
  * @property string $latitude
  * @property string $longitude
  * @property string $user_type
+ * @property string $account_type Individual / Corporate
+ * @property string|null $company_name
+ * @property string|null $company_country
+ * @property string|null $company_region
+ * @property string|null $company_city
+ * @property string|null $travel_volume
+ * @property string|null $job_title
  * @property string $updated_at
  * @property string $created_at
  *
@@ -69,6 +76,10 @@ class Appuser extends \yii\db\ActiveRecord implements IdentityInterface
 
             [['first_name', 'last_name', 'email', 'password', 'phone_number'], 'required', 'on' => 'usersignup'],
 
+            [['company_name', 'company_country', 'company_region', 'first_name', 'last_name', 'email', 'password', 'phone_number'], 'required', 'on' => 'corporatesignup'],
+
+            ['confirm_password', 'compare', 'compareAttribute' => 'password', 'skipOnEmpty' => true, 'message' => Yii::t('app', 'Confirm password does not match.'), 'on' => 'corporatesignup'],
+
             [['email'], 'email'],
 
             [['first_name', 'last_name'], 'required', 'on' => 'apiupdateprofile'],
@@ -77,13 +88,13 @@ class Appuser extends \yii\db\ActiveRecord implements IdentityInterface
 
             [['email', 'login_type', 'phone_verify'], 'required', 'on' => 'websignup'],
 
-            [['email'], 'unique', 'on' => ['usersignup', 'apiupdateprofile', 'userregister', 'normalusersignup', 'createadmin'], 'filter' => ['<>', 'is_deleted', 'Yes']],
+            [['email'], 'unique', 'on' => ['usersignup', 'corporatesignup', 'apiupdateprofile', 'userregister', 'normalusersignup', 'createadmin'], 'filter' => ['<>', 'is_deleted', 'Yes']],
 
             [['devices_type', 'devices_name', 'devices_id', 'app_version'], 'required', 'on' => ['autologin']],
 
             [['email', 'password'], 'required', 'on' => ['login']],
 
-            [['devices_type', 'devices_name', 'devices_id', 'app_version', 'devices_token'], 'safe', 'on' => ['login', 'usersignup']],
+            [['devices_type', 'devices_name', 'devices_id', 'app_version', 'devices_token'], 'safe', 'on' => ['login', 'usersignup', 'corporatesignup']],
 
             [['email_verify_code', 'email_verify_token', 'devices_type', 'devices_name', 'devices_id', 'app_version', 'os'], 'required', 'on' => ['otpverify']],
 
@@ -111,6 +122,16 @@ class Appuser extends \yii\db\ActiveRecord implements IdentityInterface
             [['birth_date', 'updated_at', 'created_at', 'first_name', 'last_name', 'otp', 'email_verify_code', 'image', 'password_reset_token', 'address', 'latitude', 'longitude', 'role', 'email_token', 'full_name', 'email_verify_token', 'site_logo', 'postal_code'], 'default', 'value' => ''],
 
             [['full_name'], 'string', 'max' => 150],
+
+            [['company_name'], 'string', 'max' => 255, 'on' => 'corporatesignup'],
+
+            [['job_title'], 'string', 'max' => 150, 'on' => 'corporatesignup'],
+
+            [['company_region', 'company_city'], 'string', 'max' => 100, 'on' => 'corporatesignup'],
+
+            [['company_country', 'travel_volume'], 'string', 'max' => 50, 'on' => 'corporatesignup'],
+
+            [['account_type'], 'in', 'range' => ['Individual', 'Corporate'], 'on' => 'corporatesignup'],
 
             [['phone_number'], 'string', 'max' => 20],
 
@@ -175,6 +196,14 @@ class Appuser extends \yii\db\ActiveRecord implements IdentityInterface
             'longitude' => Yii::t('app', 'Longitude'),
             'site_logo' => Yii::t('app', 'Site Logo'),
             'user_type' => Yii::t('app', 'User Type'),
+            'account_type' => Yii::t('app', 'Account Type'),
+            'company_name' => Yii::t('app', 'Company Name'),
+            'company_country' => Yii::t('app', 'Headquarters / Country'),
+            'company_region' => Yii::t('app', 'Primary Region'),
+            'company_city' => Yii::t('app', 'Primary City / Base'),
+            'travel_volume' => Yii::t('app', 'Estimated Monthly Travel Volume'),
+            'job_title' => Yii::t('app', 'Job Title / Designation'),
+            'confirm_password' => Yii::t('app', 'Confirm Password'),
             'rols' => Yii::t('app', 'Rols'),
             'updated_at' => Yii::t('app', 'Updated At'),
             'created_at' => Yii::t('app', 'Created At'),
