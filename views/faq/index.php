@@ -47,13 +47,10 @@ $this->params['breadcrumbs'][] = $this->title;
                         'created_at',
                         [
                             'class' => 'yii\grid\ActionColumn',
-                            'template' => '{view} {update} {delete}',
-                            'headerOptions' => ['style' => 'min-width:150px;'],
+                            'template' => '{update} {delete}',
+                            'headerOptions' => ['style' => 'min-width:100px;'],
                             'header' => 'Action',
                             'buttons' => [
-                                'view' => function ($url, $model) {
-                                    return Html::a('<button type="button" class="btn btn-sm btn-icon btn-link-info" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-custom-class="custom-tooltip" title=" View "><i class="fas fa-eye"></i></button>', $url);
-                                },
                                 'update' => function ($url, $model) {
                                     return Html::a('<button type="button" class="btn btn-sm btn-icon btn-link-success" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-custom-class="custom-tooltip" title=" Update "><i class="far fa-edit"></i></button>', $url);
                                 },
