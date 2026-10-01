@@ -78,7 +78,10 @@ class FaqController extends Controller
         $model->scenario = 'updateorder';
         $model->display_order = Yii::$app->request->post('display_order');
 
-        if ($model->validate(['display_order']) && $model->save(false, ['display_order', 'updated_at'])) {
+        if ($model->validate(['display_order'])) {
+            // Move this entry to the new position and shift the rest of its type around it
+            Faq::reorder($model->type, $model->faq_id, $model->display_order);
+            Yii::$app->session->setFlash('success', 'Display order updated.');
             return Yii::$app->MyFunctions->JsonPrint(['status' => 1, 'message' => 'Display order updated.']);
         }
         return Yii::$app->MyFunctions->JsonPrint(['status' => 0, 'message' => Yii::$app->MyFunctions->getModelErrors($model)]);

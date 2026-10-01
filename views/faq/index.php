@@ -47,7 +47,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             'value' => function ($model) {
                                 return Html::input('number', 'display_order', $model->display_order, [
                                     'class' => 'form-control form-control-sm faq-display-order',
-                                    'min' => 0,
+                                    'min' => 1,
                                     'style' => 'width:90px;margin:0 auto;',
                                     'data-url' => Url::to(['updateorder', 'id' => $model->faq_id]),
                                     'data-old' => $model->display_order,
@@ -87,7 +87,7 @@ $this->registerJs(<<<JS
 $(document).on('change', '.faq-display-order', function () {
     var input = $(this);
     var value = $.trim(input.val());
-    if (value === '' || parseInt(value, 10) < 0) {
+    if (value === '' || parseInt(value, 10) < 1) {
         input.val(input.data('old'));
         toastr.error('Please enter a valid display order.');
         return;
@@ -97,8 +97,8 @@ $(document).on('change', '.faq-display-order', function () {
     input.prop('disabled', true);
     $.post(input.data('url'), data, function (res) {
         if (res && res.status == 1) {
-            input.data('old', value);
-            toastr.success(res.message);
+            // Other rows of this type were renumbered, so reload to show the new order
+            window.location.reload();
         } else {
             input.val(input.data('old'));
             toastr.error(res && res.message ? res.message : 'Unable to update display order.');
