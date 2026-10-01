@@ -24,6 +24,7 @@ use app\models\Advertisement;
 use app\models\Tradepropartner;
 use app\models\Fleet;
 use app\models\Booking;
+use app\models\Faq;
 use app\components\ServiceAreaHelper;
 use app\components\GoogleMapsHelper;
 
@@ -1288,6 +1289,46 @@ class BeforeauthController extends Controller
       'status' => 1,
       'message' => Yii::t('app', 'Event found'),
       'data' => Yii::$app->MyFunctions->getEventObject($event),
+    ]);
+  }
+
+  // FAQ / Terms & Conditions list. Optional ?type=faq|terms_condition
+  public function actionGetfaqs()
+  {
+    $type = isset($_REQUEST['type']) ? trim((string)$_REQUEST['type']) : '';
+    $types = Faq::typeList();
+
+    if ($type !== '' && !array_key_exists($type, $types)) {
+      Yii::$app->MyFunctions->JsonPrint([
+        'status' => 0,
+        'message' => Yii::t('app', 'Invalid type. Allowed types: {types}', ['types' => implode(', ', array_keys($types))]),
+      ], 400);
+    }
+
+    $query = Faq::find()->where(['status' => 'Active'])
+      ->orderBy(['type' => SORT_ASC, 'display_order' => SORT_ASC, 'faq_id' => SORT_ASC]);
+    if ($type !== '') {
+      $query->andWhere(['type' => $type]);
+    }
+
+    $data = [];
+    foreach ($query->all() as $faq) {
+      $data[] = [
+        'faq_id' => $faq->faq_id,
+        'type' => $faq->type,
+        'type_label' => $faq->getTypeLabel(),
+        'title' => $faq->title,
+        'description' => $faq->description,
+        'display_order' => (int)$faq->display_order,
+        'created_at' => $faq->created_at,
+        'updated_at' => $faq->updated_at,
+      ];
+    }
+
+    Yii::$app->MyFunctions->JsonPrint([
+      'status' => 1,
+      'message' => empty($data) ? Yii::t('app', 'No record(s) found.') : Yii::t('app', 'Record(s) found.'),
+      'data' => $data,
     ]);
   }
 
