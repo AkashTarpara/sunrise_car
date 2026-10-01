@@ -2,6 +2,7 @@
 
 use app\models\Faq;
 use yii\helpers\Html;
+use yii\helpers\Url;
 use yii\grid\GridView;
 
 /** @var yii\web\View $this */
@@ -39,7 +40,20 @@ $this->params['breadcrumbs'][] = $this->title;
                             },
                         ],
                         'title',
-                        'display_order',
+                        [
+                            'attribute' => 'display_order',
+                            'format' => 'raw',
+                            'headerOptions' => ['style' => 'width:140px;'],
+                            'value' => function ($model) {
+                                return Html::input('number', 'display_order', $model->display_order, [
+                                    'class' => 'form-control form-control-sm faq-display-order',
+                                    'min' => 0,
+                                    'style' => 'width:90px;margin:0 auto;',
+                                    'data-url' => Url::to(['updateorder', 'id' => $model->faq_id]),
+                                    'data-old' => $model->display_order,
+                                ]);
+                            },
+                        ],
                         [
                             'attribute' => 'status',
                             'filter' => ['Active' => 'Active', 'Inactive' => 'Inactive'],
@@ -68,3 +82,33 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
     </div>
 </div>
+<?php
+$this->registerJs(<<<JS
+$(document).on('change', '.faq-display-order', function () {
+    var input = $(this);
+    var value = $.trim(input.val());
+    if (value === '' || parseInt(value, 10) < 0) {
+        input.val(input.data('old'));
+        toastr.error('Please enter a valid display order.');
+        return;
+    }
+    var data = { display_order: value };
+    data[yii.getCsrfParam()] = yii.getCsrfToken();
+    input.prop('disabled', true);
+    $.post(input.data('url'), data, function (res) {
+        if (res && res.status == 1) {
+            input.data('old', value);
+            toastr.success(res.message);
+        } else {
+            input.val(input.data('old'));
+            toastr.error(res && res.message ? res.message : 'Unable to update display order.');
+        }
+    }, 'json').fail(function () {
+        input.val(input.data('old'));
+        toastr.error('Unable to update display order.');
+    }).always(function () {
+        input.prop('disabled', false);
+    });
+});
+JS);
+?>

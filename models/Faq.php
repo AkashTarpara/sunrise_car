@@ -47,8 +47,8 @@ class Faq extends \yii\db\ActiveRecord
             [['type'], 'in', 'range' => array_keys(self::typeList())],
             [['title'], 'string', 'max' => 255],
             [['description'], 'string'],
-            [['display_order'], 'integer', 'min' => 0],
-            [['display_order'], 'default', 'value' => 0],
+            [['display_order'], 'integer', 'min' => 0, 'on' => 'updateorder'],
+            [['display_order'], 'required', 'on' => 'updateorder'],
             [['status'], 'in', 'range' => ['Active', 'Inactive']],
             [['status'], 'default', 'value' => 'Active'],
             [['created_at', 'updated_at'], 'safe'],
@@ -76,7 +76,10 @@ class Faq extends \yii\db\ActiveRecord
             return false;
         }
 
-        if (!$insert) {
+        if ($insert) {
+            // Place new entries at the end of their type; order is managed from the list page
+            $this->display_order = (int)static::find()->where(['type' => $this->type])->max('display_order') + 1;
+        } else {
             $this->updated_at = date('Y-m-d H:i:s');
         }
 

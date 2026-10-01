@@ -23,7 +23,7 @@ class FaqController extends Controller
             ],
             'verbs' => [
                 'class' => VerbFilter::className(),
-                'actions' => ['delete' => ['POST']],
+                'actions' => ['delete' => ['POST'], 'updateorder' => ['POST']],
             ],
         ];
     }
@@ -70,6 +70,18 @@ class FaqController extends Controller
         $this->findModel($id)->delete();
         Yii::$app->session->setFlash('success', 'Record deleted successfully.');
         return $this->redirect(['index']);
+    }
+
+    public function actionUpdateorder($id)
+    {
+        $model = $this->findModel($id);
+        $model->scenario = 'updateorder';
+        $model->display_order = Yii::$app->request->post('display_order');
+
+        if ($model->validate(['display_order']) && $model->save(false, ['display_order', 'updated_at'])) {
+            return Yii::$app->MyFunctions->JsonPrint(['status' => 1, 'message' => 'Display order updated.']);
+        }
+        return Yii::$app->MyFunctions->JsonPrint(['status' => 0, 'message' => Yii::$app->MyFunctions->getModelErrors($model)]);
     }
 
     public function actionChangestatus($id)

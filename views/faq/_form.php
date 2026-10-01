@@ -11,9 +11,8 @@ use yii\widgets\ActiveForm;
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.js"></script>
 <?php $form = ActiveForm::begin(); ?>
 <div class="row">
-    <div class="col-md-4"><?= $form->field($model, 'type')->dropDownList(Faq::typeList(), ['prompt' => 'Select Type']) ?></div>
-    <div class="col-md-4"><?= $form->field($model, 'display_order')->input('number', ['min' => 0]) ?></div>
-    <div class="col-md-4"><?= $form->field($model, 'status')->dropDownList(['Active' => 'Active', 'Inactive' => 'Inactive']) ?></div>
+    <div class="col-md-6"><?= $form->field($model, 'type')->dropDownList(Faq::typeList(), ['prompt' => 'Select Type']) ?></div>
+    <div class="col-md-6"><?= $form->field($model, 'status')->dropDownList(['Active' => 'Active', 'Inactive' => 'Inactive']) ?></div>
 </div>
 <?= $form->field($model, 'title')->textInput(['maxlength' => true]) ?>
 <?= $form->field($model, 'description')->textarea(['rows' => 8]) ?>
