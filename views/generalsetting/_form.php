@@ -193,6 +193,11 @@ use wbraganca\dynamicform\DynamicFormWidget;
             <?= $form->field($model, 'meta_description')->textarea(['rows' => 3]) ?>
         </div>
     </div>
+    <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+            <?= $form->field($model, 'reserve_your_ride_confirmation_msg')->textarea(['rows' => 4]) ?>
+        </div>
+    </div>
     <div class="row" style="display:none;">
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
             <?= $form->field($model, 'need_to_display_roomvo')->radioList([

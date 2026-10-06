@@ -467,6 +467,7 @@ class BeforeauthController extends Controller
       $data['meta_title'] = $model->meta_title;
       $data['meta_tag'] = $model->meta_tag;
       $data['meta_description'] = $model->meta_description;
+      $data['reserve_your_ride_confirmation_msg'] = $model->reserve_your_ride_confirmation_msg;
       $data['tax'] = $model->tax;
       $data['warehouse_address'] = $model->warehouse_address;
       $data['latitude'] = $model->latitude;

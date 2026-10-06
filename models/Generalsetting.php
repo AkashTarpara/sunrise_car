@@ -10,6 +10,7 @@ use Yii;
  * @property string $setting_id
  * @property string $terms_conditions
  * @property string $privacy_policy
+ * @property string|null $reserve_your_ride_confirmation_msg
  */
 class Generalsetting extends \yii\db\ActiveRecord
 {
@@ -31,11 +32,11 @@ class Generalsetting extends \yii\db\ActiveRecord
 
             [['setting_id', 'matches', 'century', 'half_century', 'wickets', 'trophies', 'android_app_version', 'ios_app_version'], 'integer'],
             [['tax'], 'number'],
-            [['terms_conditions', 'privacy_policy', 'about_us', 'facebook', 'instagram', 'twitter', 'youtube', 'tiktok', 'snapchat', 'ticket_policy', 'cookie', 'code_of_conduct', 'user_terms_conditions', 'user_privacy_policy', 'user_terms_service', 'club_terms_service', 'api_key', 'sps_flooring_title', 'sps_flooring_sub_title', 'weekly_bestsellers_title', 'weekly_bestsellers_sub_title', 'clients_say_title', 'clients_say_sub_title', 'pick_up_delivery', 'agree_delivery', 'meta_description', 'latitude', 'longitude', 'warehouse_address', 'contact_us_image'], 'string'],
+            [['terms_conditions', 'privacy_policy', 'about_us', 'facebook', 'instagram', 'twitter', 'youtube', 'tiktok', 'snapchat', 'ticket_policy', 'cookie', 'code_of_conduct', 'user_terms_conditions', 'user_privacy_policy', 'user_terms_service', 'club_terms_service', 'api_key', 'sps_flooring_title', 'sps_flooring_sub_title', 'weekly_bestsellers_title', 'weekly_bestsellers_sub_title', 'clients_say_title', 'clients_say_sub_title', 'pick_up_delivery', 'agree_delivery', 'meta_description', 'latitude', 'longitude', 'warehouse_address', 'contact_us_image', 'reserve_your_ride_confirmation_msg'], 'string'],
 
             [['setting_id'], 'unique'],
 
-            [['facebook', 'instagram', 'twitter', 'youtube', 'tiktok', 'snapchat', 'access_token', 'token_type', 'force_update', 'threed_url', 'ios_unity_file', 'contact_no', 'telephone_no', 'email', 'address', 'map_url', 'ticket_policy', 'linkedin', 'cookie', 'code_of_conduct', 'user_terms_conditions', 'user_privacy_policy', 'user_terms_service', 'club_terms_service', 'api_key', 'sps_flooring_title', 'sps_flooring_sub_title', 'weekly_bestsellers_title', 'weekly_bestsellers_sub_title', 'clients_say_title', 'clients_say_sub_title', 'pick_up_delivery', 'agree_delivery', 'meta_title', 'meta_tag', 'latitude', 'longitude', 'warehouse_address', 'contact_us_image', 'delivery_charge', 'need_to_display_roomvo', 'terms_conditions_trade_pro'], 'safe'],
+            [['facebook', 'instagram', 'twitter', 'youtube', 'tiktok', 'snapchat', 'access_token', 'token_type', 'force_update', 'threed_url', 'ios_unity_file', 'contact_no', 'telephone_no', 'email', 'address', 'map_url', 'ticket_policy', 'linkedin', 'cookie', 'code_of_conduct', 'user_terms_conditions', 'user_privacy_policy', 'user_terms_service', 'club_terms_service', 'api_key', 'sps_flooring_title', 'sps_flooring_sub_title', 'weekly_bestsellers_title', 'weekly_bestsellers_sub_title', 'clients_say_title', 'clients_say_sub_title', 'pick_up_delivery', 'agree_delivery', 'meta_title', 'meta_tag', 'latitude', 'longitude', 'warehouse_address', 'contact_us_image', 'delivery_charge', 'need_to_display_roomvo', 'terms_conditions_trade_pro', 'reserve_your_ride_confirmation_msg'], 'safe'],
 
             [
                 ['delivery_charge'],
@@ -104,6 +105,7 @@ class Generalsetting extends \yii\db\ActiveRecord
             'latitude' => Yii::t('app', 'Warehouse Latitude'),
             'longitude' => Yii::t('app', 'Warehouse Longitude'),
             'contact_us_image' => Yii::t('app', 'Contact Us Image'),
+            'reserve_your_ride_confirmation_msg' => Yii::t('app', 'Reserve Your Ride Confirmation Message'),
         ];
     }
 
