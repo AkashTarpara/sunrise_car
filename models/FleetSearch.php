@@ -28,7 +28,23 @@ class FleetSearch extends Fleet
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
             'sort' => [
-                'defaultOrder' => ['id' => SORT_DESC],
+                'defaultOrder' => ['type' => SORT_ASC],
+                'attributes' => [
+                    'id',
+                    'label',
+                    'name',
+                    'passenger',
+                    'hourly_price',
+                    'minimum_hours',
+                    'status',
+                    'is_available',
+                    'available_after',
+                    'created_at',
+                    'type' => [
+                        'asc' => [Fleet::typeOrderExpression(), 'id' => SORT_DESC],
+                        'desc' => [new \yii\db\Expression(Fleet::typeOrderExpression() . ' DESC'), 'id' => SORT_DESC],
+                    ],
+                ],
             ],
         ]);
 

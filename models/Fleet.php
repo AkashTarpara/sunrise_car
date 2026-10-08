@@ -16,15 +16,27 @@ class Fleet extends \yii\db\ActiveRecord
     public static function typeOptions()
     {
         return [
-            'SEDANS' => 'SEDANS',
-            'SUVS' => 'SUVS',
-            'LIMOUSINES' => 'LIMOUSINES',
-            'SPRINTERS' => 'SPRINTERS',
-            'VANS' => 'VANS',
-            'BUSES' => 'BUSES',
-            'MOTORCYCLES' => 'MOTORCYCLES',
-            'TRUCKS' => 'TRUCKS',
+            'Sedan' => 'Sedan',
+            'SUV' => 'SUV',
+            'Bulletproof SUV' => 'Bulletproof SUV',
+            'Stretch Limo' => 'Stretch Limo',
+            'Antique' => 'Antique',
+            'Sprinter' => 'Sprinter',
+            'Jet Sprinter' => 'Jet Sprinter',
+            'Minibus' => 'Minibus',
+            'Mini Coach' => 'Mini Coach',
+            'Motor Coach' => 'Motor Coach',
         ];
+    }
+
+    /**
+     * ORDER BY expression that sorts fleets by type in the order of typeOptions().
+     */
+    public static function typeOrderExpression()
+    {
+        $db = static::getDb();
+        $values = array_map([$db, 'quoteValue'], array_keys(self::typeOptions()));
+        return new \yii\db\Expression('FIELD(' . $db->quoteColumnName('type') . ', ' . implode(', ', $values) . ')');
     }
 
     public function rules()

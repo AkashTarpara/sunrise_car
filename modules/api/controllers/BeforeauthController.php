@@ -678,7 +678,7 @@ class BeforeauthController extends Controller
     $query = Fleet::find()
       ->where(['status' => 'Active', 'deleted_at' => null])
       ->with('fleetImages')
-      ->orderBy(['id' => SORT_DESC]);
+      ->orderBy([Fleet::typeOrderExpression(), 'id' => SORT_DESC]);
 
     if (!empty($type)) {
       $query->andWhere(['type' => $type]);
