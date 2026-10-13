@@ -23,7 +23,6 @@ class Fleet extends \yii\db\ActiveRecord
             'Antique' => 'Antique',
             'Sprinter' => 'Sprinter',
             'Jet Sprinter' => 'Jet Sprinter',
-            'Minibus' => 'Minibus',
             'Mini Coach' => 'Mini Coach',
             'Motor Coach' => 'Motor Coach',
         ];
