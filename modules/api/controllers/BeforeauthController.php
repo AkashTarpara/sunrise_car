@@ -25,6 +25,7 @@ use app\models\Tradepropartner;
 use app\models\Fleet;
 use app\models\Booking;
 use app\models\Faq;
+use app\models\Affiliate;
 use app\components\ServiceAreaHelper;
 use app\components\GoogleMapsHelper;
 
@@ -1248,6 +1249,178 @@ class BeforeauthController extends Controller
     }
 
     return false;
+  }
+
+  /**
+   * Affiliate onboarding (https://sunriseblackcar.com/affiliates/).
+   * multipart/form-data: text fields + one file per document field.
+   */
+  public function actionAffiliate()
+  {
+    if (!Yii::$app->request->isPost) {
+      Yii::$app->MyFunctions->JsonPrint(array('status' => 0, 'message' => Yii::t('app', 'Method not allowed.')));
+    }
+
+    $data = Yii::$app->request->post();
+    if (isset($data['Affiliate']) && is_array($data['Affiliate'])) {
+      $data = $data['Affiliate'];
+    }
+
+    // Select fields accept either the option key (e.g. "luxury_suv") or its display label
+    $optionMaps = array(
+      'exterior_finish' => Affiliate::exteriorFinishOptions(),
+      'interior_upholstery' => Affiliate::interiorUpholsteryOptions(),
+      'vehicle_class' => Affiliate::vehicleClassOptions(),
+      'payout_method' => Affiliate::payoutMethodOptions(),
+    );
+    foreach ($optionMaps as $field => $options) {
+      if (isset($data[$field]) && $data[$field] !== '' && !isset($options[$data[$field]])) {
+        $key = array_search($data[$field], $options, true);
+        if ($key !== false) {
+          $data[$field] = $key;
+        }
+      }
+    }
+
+    $fileFields = Affiliate::fileFields();
+    foreach (array_keys($fileFields) as $field) {
+      unset($data[$field]);
+    }
+    unset($data['status'], $data['admin_notes'], $data['affiliate_id'], $data['created_at'], $data['updated_at']);
+
+    $model = new Affiliate();
+    $model->load($data, '');
+    $model->status = Affiliate::STATUS_PENDING;
+
+    // Validate text fields before touching the disk
+    $textAttributes = array_diff(array_keys($model->attributes), array_keys($fileFields));
+    if (!$model->validate($textAttributes)) {
+      Yii::$app->MyFunctions->getModelErrors($model, "Y");
+    }
+
+    $saved = array();
+    $fileErrors = array();
+    foreach ($fileFields as $field => $config) {
+      list($required, $extensions) = $config;
+      $file = UploadedFile::getInstanceByName($field);
+
+      if (!$file || $file->hasError) {
+        if ($required) {
+          $fileErrors[$field] = Yii::t('app', '{label} is required.', ['label' => $model->getAttributeLabel($field)]);
+        }
+        continue;
+      }
+
+      $path = $this->saveAffiliateFile($file, $extensions);
+      if ($path === false) {
+        $fileErrors[$field] = Yii::t('app', '{label} must be a {ext} file up to 10MB.', [
+          'label' => $model->getAttributeLabel($field),
+          'ext' => strtoupper(implode('/', $extensions)),
+        ]);
+        continue;
+      }
+
+      $saved[] = $path;
+      $model->$field = $path;
+    }
+
+    if (!empty($fileErrors) || !$model->save()) {
+      foreach ($saved as $path) {
+        @unlink($path);
+      }
+      foreach ($fileErrors as $field => $error) {
+        $model->addError($field, $error);
+      }
+      Yii::$app->MyFunctions->getModelErrors($model, "Y");
+    }
+
+    try {
+      $toEmail = !empty(Yii::$app->params['contactEmail']) ? Yii::$app->params['contactEmail'] : 'info@sunriseblackcar.com';
+      $fromEmail = !empty(Yii::$app->params['senderEmail']) ? Yii::$app->params['senderEmail'] : (!empty(Yii::$app->params['supportEmail']) ? Yii::$app->params['supportEmail'] : $toEmail);
+      $senderName = !empty(Yii::$app->params['senderName']) ? Yii::$app->params['senderName'] : 'Sunrise Black Car';
+
+      $rows = array(
+        'Full Name' => $model->full_name,
+        'Email' => $model->email,
+        'Mobile Phone' => $model->phone,
+        'Vehicle' => $model->model_year . ' ' . $model->make_model,
+        'Class' => $model->optionLabel('vehicle_class'),
+        'Business Name' => $model->legal_business_name,
+      );
+      $htmlContent = "<div style='font-family: Arial, sans-serif; font-size: 14px; color: #333; line-height: 1.6;'>"
+        . "<h2 style='color: #111;'>New Affiliate Application</h2>"
+        . "<table style='width: 100%; max-width: 600px; border-collapse: collapse; margin-top: 15px;'>";
+      foreach ($rows as $label => $value) {
+        $htmlContent .= "<tr><td style='padding: 8px; font-weight: bold; border-bottom: 1px solid #ddd; width: 160px;'>" . $label . ":</td><td style='padding: 8px; border-bottom: 1px solid #ddd;'>" . htmlspecialchars((string) $value) . "</td></tr>";
+      }
+      $htmlContent .= "</table><p>Review the documents in the admin panel (Affiliates).</p></div>";
+
+      Yii::$app->mailer->compose()
+        ->setFrom([$fromEmail => $senderName])
+        ->setTo($toEmail)
+        ->setSubject('New Affiliate Application: ' . $model->full_name)
+        ->setHtmlBody($htmlContent)
+        ->send();
+    } catch (\Throwable $e) {
+      Yii::error('Affiliate email sending error: ' . $e->getMessage(), 'affiliate');
+    }
+
+    Yii::$app->MyFunctions->JsonPrint(array(
+      'status' => 1,
+      'message' => Yii::t('app', 'Thank you. Your documents have been submitted for verification. Our team will review your application within 1 business day.'),
+      'data' => array(
+        'affiliate_id' => $model->affiliate_id,
+        'full_name' => $model->full_name,
+        'email' => $model->email,
+        'phone' => $model->phone,
+        'status' => $model->getStatusLabel(),
+        'created_at' => $model->created_at,
+      ),
+    ));
+  }
+
+  /**
+   * Returns dropdown options for the affiliate form.
+   */
+  public function actionAffiliateoptions()
+  {
+    $format = function ($options) {
+      $list = array();
+      foreach ($options as $value => $label) {
+        $list[] = array('value' => $value, 'label' => $label);
+      }
+      return $list;
+    };
+
+    Yii::$app->MyFunctions->JsonPrint(array(
+      'status' => 1,
+      'message' => Yii::t('app', 'Success'),
+      'data' => array(
+        'exterior_finish' => $format(Affiliate::exteriorFinishOptions()),
+        'interior_upholstery' => $format(Affiliate::interiorUpholsteryOptions()),
+        'vehicle_class' => $format(Affiliate::vehicleClassOptions()),
+        'payout_method' => $format(Affiliate::payoutMethodOptions()),
+      ),
+    ));
+  }
+
+  private function saveAffiliateFile($file, $allowedExtensions)
+  {
+    $extension = strtolower($file->extension);
+
+    if (!in_array($extension, $allowedExtensions, true) || $file->size > 10 * 1024 * 1024) {
+      return false;
+    }
+
+    $path = 'uploads/files/affiliates/';
+    if (!is_dir($path)) {
+      mkdir($path, 0777, true);
+      chmod($path, 0777);
+    }
+
+    $filePath = $path . Yii::$app->security->generateRandomString(32) . '.' . $extension;
+
+    return $file->saveAs($filePath) ? $filePath : false;
   }
 
   //7
