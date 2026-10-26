@@ -142,8 +142,9 @@ class Affiliate extends \yii\db\ActiveRecord
             ['model_year', 'match', 'pattern' => '/^(19|20)\d{2}$/', 'message' => Yii::t('app', 'Model Year must be a valid 4-digit year.')],
             ['routing_number', 'match', 'pattern' => '/^\d{9}$/', 'message' => Yii::t('app', 'Routing Number must be 9 digits.')],
             ['account_number', 'match', 'pattern' => '/^[0-9A-Za-z]{4,34}$/', 'message' => Yii::t('app', 'Account Number is invalid.')],
-            ['exterior_finish', 'in', 'range' => array_keys(self::exteriorFinishOptions())],
-            ['interior_upholstery', 'in', 'range' => array_keys(self::interiorUpholsteryOptions())],
+            // Free text allowed; known options are normalized to their keys by the API
+            [['exterior_finish', 'interior_upholstery'], 'trim'],
+            [['exterior_finish', 'interior_upholstery'], 'string', 'max' => 50],
             ['vehicle_class', 'in', 'range' => array_keys(self::vehicleClassOptions())],
             ['payout_method', 'in', 'range' => array_keys(self::payoutMethodOptions())],
             ['status', 'in', 'range' => array_keys(self::statusOptions())],
