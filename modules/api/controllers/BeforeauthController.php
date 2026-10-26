@@ -1273,11 +1273,20 @@ class BeforeauthController extends Controller
       'vehicle_class' => Affiliate::vehicleClassOptions(),
       'payout_method' => Affiliate::payoutMethodOptions(),
     );
+    // Loose comparison: ignore case, punctuation and "(...)" suffixes, so "Black Nappa Leather" matches "Black Nappa / Leather"
+    $normalize = function ($value) {
+      $value = strtolower(trim((string) $value));
+      $value = preg_replace('/\(.*?\)/', '', $value);
+      return preg_replace('/[^a-z0-9]+/', '', $value);
+    };
     foreach ($optionMaps as $field => $options) {
       if (isset($data[$field]) && $data[$field] !== '' && !isset($options[$data[$field]])) {
-        $key = array_search($data[$field], $options, true);
-        if ($key !== false) {
-          $data[$field] = $key;
+        $input = $normalize($data[$field]);
+        foreach ($options as $key => $label) {
+          if ($input === $normalize($key) || $input === $normalize($label)) {
+            $data[$field] = $key;
+            break;
+          }
         }
       }
     }
